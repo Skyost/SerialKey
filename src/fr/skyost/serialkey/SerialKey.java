@@ -2,6 +2,8 @@ package fr.skyost.serialkey;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -23,6 +25,7 @@ public class SerialKey extends JavaPlugin {
 	
 	protected static ItemStack key;
 	protected static ItemStack masterKey;
+	protected static ItemStack keyClone;
 	
 	protected static PluginConfig config;
 	protected static PluginMessages messages;
@@ -43,6 +46,13 @@ public class SerialKey extends JavaPlugin {
 			createRecipe(key, config.keyShape, config.keyShapeMaterials);
 			masterKey = createItem(config.masterKeyName, config.masterKeyMaterial);
 			createRecipe(masterKey, config.masterKeyShape, config.masterKeyShapeMaterials);
+			keyClone = key.clone();
+			keyClone.setAmount(2);
+			createRecipe(keyClone, Arrays.asList("EE"), new HashMap<String, String>() {
+				private static final long serialVersionUID = 1L; {
+					put("E", config.keyMaterial.name());
+				}
+			});
 			Bukkit.getPluginManager().registerEvents(new EventsListener(), this);
 			if(config.enableUpdater) {
 				new Skyupdater(this, 84423, this.getFile(), true, true);

@@ -1,7 +1,7 @@
 name: SerialKey
 main: fr.skyost.serialkey.SerialKey
 author: Skyost
-version: 0.1
+version: 0.2
 website: http://www.skyost.eu
 permissions:
   serialkey.craft.key:
@@ -10,6 +10,9 @@ permissions:
   serialkey.craft.masterkey:
     default: op
     description: Allows you to craft a master key.
+  serialkey.craft.keyclone:
+    default: op
+    description: Allows you to craft a clone of a key.
   serialkey.use.key:
     default: true
     description: Allows you to use a key.

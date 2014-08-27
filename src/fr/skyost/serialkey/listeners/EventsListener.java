@@ -1,6 +1,7 @@
 package fr.skyost.serialkey.listeners;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -18,21 +19,55 @@ import org.bukkit.event.entity.EntityBreakDoorEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.material.Door;
+import org.bukkit.inventory.meta.ItemMeta;
 
+import fr.skyost.serialkey.PluginConfig;
 import fr.skyost.serialkey.SerialKeyAPI;
 
-@SuppressWarnings("deprecation")
 public class EventsListener implements Listener {
 	
 	@EventHandler
 	private final void onPrepareItemCraft(final PrepareItemCraftEvent event) {
-		final ItemStack result = event.getRecipe().getResult();
+		final CraftingInventory craftingTable = event.getInventory();
+		final ItemStack result = craftingTable.getResult();
 		final Player player = (Player)event.getView().getPlayer();
-		if((result.equals(SerialKeyAPI.getKeyItem()) && !player.hasPermission("serialkey.craft.key")) || (result.equals(SerialKeyAPI.getMasterKeyItem()) && !player.hasPermission("serialkey.craft.masterkey"))) {
+		final ItemStack keyClone = SerialKeyAPI.getKeyCloneItem();
+		if((result.equals(SerialKeyAPI.getKeyItem()) && !player.hasPermission("serialkey.craft.key")) || (result.equals(SerialKeyAPI.getMasterKeyItem()) && !player.hasPermission("serialkey.craft.masterkey")) || (result.equals(keyClone) && !player.hasPermission("serialkey.craft.keyclone"))) {
 			player.sendMessage(SerialKeyAPI.getMessages().message6);
-			event.getInventory().setResult(new ItemStack(Material.AIR));
+			event.getInventory().setResult(null);
+			return;
+		}
+		if(result.equals(keyClone)) {
+			final PluginConfig config = SerialKeyAPI.getConfig();
+			ItemStack key = null;
+			ItemStack blankKey = null;
+			for(final ItemStack item : craftingTable.all(config.keyMaterial).values()) {
+				if(!item.hasItemMeta() || item.getAmount() == 2) {
+					continue;
+				}
+				final ItemMeta meta = item.getItemMeta();
+				if(!meta.hasDisplayName()) {
+					break;
+				}
+				if(meta.hasDisplayName() && meta.getDisplayName().equals(config.keyName)) {
+					final List<String> lore = meta.getLore();
+					if(lore != null && lore.size() == 2) {
+						key = item;
+					}
+					else {
+						blankKey = item;
+					}
+				}
+			}
+			if(key == null || blankKey == null) {
+				craftingTable.setResult(null);
+				return;
+			}
+			final ItemMeta meta = result.getItemMeta();
+			meta.setLore(key.getItemMeta().getLore());
+			result.setItemMeta(meta);
 		}
 	}
 	
@@ -43,7 +78,7 @@ public class EventsListener implements Listener {
 			return;
 		}
 		final BlockState state = clicked.getState();
-		if(!(state instanceof Chest) && !(state.getData() instanceof Door)) {
+		if(!(state instanceof Chest) && !(state.getData() instanceof org.bukkit.material.Door)) {
 			return;
 		}
 		final Action action = event.getAction();

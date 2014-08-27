@@ -34,7 +34,7 @@ public class PluginConfig extends Skyoconfig {
 	public List<String> masterKeyShape = Arrays.asList("C", "D");
 	@ConfigOptions(name = "master-key.shape-materials")
 	public LinkedHashMap<String, String> masterKeyShapeMaterials = new LinkedHashMap<String, String>();
-
+	
 	protected PluginConfig(final File dataFolder) {
 		super(new File(dataFolder, "config.yml"), Arrays.asList("SerialKey configuration"));
 		keyShapeMaterials.put("A", Material.IRON_INGOT.name());

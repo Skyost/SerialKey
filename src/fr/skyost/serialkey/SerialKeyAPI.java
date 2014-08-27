@@ -17,7 +17,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.material.Door;
+
+import fr.skyost.serialkey.utils.Utils;
 
 public class SerialKeyAPI {
 	
@@ -59,6 +60,10 @@ public class SerialKeyAPI {
 	
 	public static final ItemStack getMasterKeyItem() {
 		return SerialKey.masterKey.clone();
+	}
+	
+	public static final ItemStack getKeyCloneItem() {
+		return SerialKey.keyClone.clone();
 	}
 	
 	/**
@@ -159,10 +164,13 @@ public class SerialKeyAPI {
 			return false;
 		}
 		final Material type = key.getType();
-		if(type == Material.AIR) {
+		if(type == Material.AIR || !key.hasItemMeta()) {
 			return false;
 		}
 		final ItemMeta meta = key.getItemMeta();
+		if(!meta.hasDisplayName() || !meta.hasLore()) {
+			return false;
+		}
 		final List<String> lore = meta.getLore();
 		final String name = meta.getDisplayName();
 		if(type == SerialKey.masterKey.getType() && name.equals(SerialKey.masterKey.getItemMeta().getDisplayName())) {
@@ -219,8 +227,9 @@ public class SerialKeyAPI {
 		if(key.getAmount() > 1) {
 			key.setAmount(1);
 		}
+		final ChatColor color = Utils.randomChatColor(ChatColor.BOLD, ChatColor.ITALIC, ChatColor.UNDERLINE, ChatColor.STRIKETHROUGH, ChatColor.MAGIC);
 		final ItemMeta meta = key.getItemMeta();
-		meta.setLore(Arrays.asList(ChatColor.AQUA + location.getWorld().getName(), ChatColor.AQUA + String.valueOf(location.getBlockX()) + ", " + location.getBlockY() + ", " + location.getBlockZ()));
+		meta.setLore(Arrays.asList(color + location.getWorld().getName(), color + String.valueOf(location.getBlockX()) + ", " + location.getBlockY() + ", " + location.getBlockZ()));
 		key.setItemMeta(meta);
 		return key;
 	}
@@ -242,8 +251,8 @@ public class SerialKeyAPI {
 				location.setZ(left.getZ());
 			}
 		}
-		else if(state.getData() instanceof Door) {
-			location.setY(location.getBlockY() - (block.getRelative(BlockFace.DOWN).getState().getData() instanceof Door ?  2 : 1));
+		else if(state.getData() instanceof org.bukkit.material.Door) {
+			location.setY(location.getBlockY() - (block.getRelative(BlockFace.DOWN).getState().getData() instanceof org.bukkit.material.Door ?  2 : 1));
 		}
 	}
 
