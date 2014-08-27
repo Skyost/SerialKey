@@ -11,11 +11,17 @@ permissions:
     default: op
     description: Allows you to craft a master key.
   serialkey.craft.keyclone:
-    default: op
+    default: true
     description: Allows you to craft a clone of a key.
+  serialkey.craft.bunchofkeys:
+    default: true
+    description: Allows you to craft a bunch of keys.
   serialkey.use.key:
     default: true
     description: Allows you to use a key.
   serialkey.use.masterkey:
     default: op
     description: Allows you to use a master key.
+  serialkey.use.bunchofkeys:
+    default: true
+    description: Allows you to use a bunch of keys.

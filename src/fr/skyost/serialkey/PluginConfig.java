@@ -23,24 +23,30 @@ public class PluginConfig extends Skyoconfig {
 	public String keyName = ChatColor.GOLD + "Key";
 	@ConfigOptions(name = "key.shape")
 	public List<String> keyShape = Arrays.asList("A", "B");
-	@ConfigOptions(name = "key.shape-materials")
-	public LinkedHashMap<String, String> keyShapeMaterials = new LinkedHashMap<String, String>();
 	
 	@ConfigOptions(name = "master-key.material")
 	public Material masterKeyMaterial = Material.NAME_TAG;
 	@ConfigOptions(name = "master-key.name")
 	public String masterKeyName = ChatColor.DARK_PURPLE + "Master Key";
 	@ConfigOptions(name = "master-key.shape")
-	public List<String> masterKeyShape = Arrays.asList("C", "D");
-	@ConfigOptions(name = "master-key.shape-materials")
-	public LinkedHashMap<String, String> masterKeyShapeMaterials = new LinkedHashMap<String, String>();
+	public List<String> masterKeyShape = Arrays.asList("C", "B");
+	
+	@ConfigOptions(name = "bunch-of-keys.material")
+	public Material bunchOfKeysMaterial = Material.NAME_TAG;
+	@ConfigOptions(name = "bunch-of-keys.name")
+	public String bunchOfKeysName = ChatColor.BLUE + "Bunch of keys";
+	@ConfigOptions(name = "bunch-of-keys.shape")
+	public List<String> bunchOfKeysShape = Arrays.asList(" D ", "DBD", " D ");
+	
+	@ConfigOptions(name = "shape-materials")
+	public LinkedHashMap<String, String> shapeMaterials = new LinkedHashMap<String, String>();
 	
 	protected PluginConfig(final File dataFolder) {
 		super(new File(dataFolder, "config.yml"), Arrays.asList("SerialKey configuration"));
-		keyShapeMaterials.put("A", Material.IRON_INGOT.name());
-		keyShapeMaterials.put("B", Material.LEVER.name());
-		masterKeyShapeMaterials.put("C", Material.COMMAND.name());
-		masterKeyShapeMaterials.put("D", Material.TRIPWIRE_HOOK.name());
+		shapeMaterials.put("A", Material.IRON_INGOT.name());
+		shapeMaterials.put("B", Material.LEVER.name());
+		shapeMaterials.put("C", Material.COMMAND.name());
+		shapeMaterials.put("D", Material.STRING.name());
 	}
 
 }

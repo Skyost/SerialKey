@@ -14,18 +14,21 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
-import fr.skyost.serialkey.listeners.EventsListener;
+import fr.skyost.serialkey.listeners.*;
 import fr.skyost.serialkey.utils.Skyupdater;
+import fr.skyost.serialkey.utils.Utils;
 
 public class SerialKey extends JavaPlugin {
 	
 	protected static ItemStack key;
 	protected static ItemStack masterKey;
 	protected static ItemStack keyClone;
+	protected static ItemStack bunchOfKeys;
 	
 	protected static PluginConfig config;
 	protected static PluginMessages messages;
@@ -43,17 +46,22 @@ public class SerialKey extends JavaPlugin {
 			data.load();
 			handleLocations();
 			key = createItem(config.keyName, config.keyMaterial);
-			createRecipe(key, config.keyShape, config.keyShapeMaterials);
+			createRecipe(key, config.keyShape);
 			masterKey = createItem(config.masterKeyName, config.masterKeyMaterial);
-			createRecipe(masterKey, config.masterKeyShape, config.masterKeyShapeMaterials);
+			createRecipe(masterKey, config.masterKeyShape);
 			keyClone = key.clone();
 			keyClone.setAmount(2);
-			createRecipe(keyClone, Arrays.asList("EE"), new HashMap<String, String>() {
+			createRecipe(keyClone, Arrays.asList("ZZ"), new HashMap<String, String>() {
 				private static final long serialVersionUID = 1L; {
-					put("E", config.keyMaterial.name());
+					put("Z", config.keyMaterial.name());
 				}
 			});
-			Bukkit.getPluginManager().registerEvents(new EventsListener(), this);
+			bunchOfKeys = createItem(config.bunchOfKeysName, config.bunchOfKeysMaterial);
+			createRecipe(bunchOfKeys, config.bunchOfKeysShape);
+			final PluginManager manager = Bukkit.getPluginManager();
+			manager.registerEvents(new GlobalListener(), this);
+			manager.registerEvents(new BlocksListener(), this);
+			manager.registerEvents(new BunchOfKeysListener(), this);
 			if(config.enableUpdater) {
 				new Skyupdater(this, 84423, this.getFile(), true, true);
 			}
@@ -103,6 +111,17 @@ public class SerialKey extends JavaPlugin {
 	}
 	
 	/**
+	 * Creates a recipe for an item with defaults ingredients.
+	 * 
+	 * @param result The item.
+	 * @param shape The shape.
+	 */
+	
+	private final void createRecipe(final ItemStack result, final List<String> shape) {
+		createRecipe(result, shape, config.shapeMaterials);
+	}
+	
+	/**
 	 * Creates a recipe for an item.
 	 * 
 	 * @param result The item.
@@ -110,9 +129,12 @@ public class SerialKey extends JavaPlugin {
 	 * @param ingredients The ingredients needed for the craft.
 	 */
 	
-	private final void createRecipe(final ItemStack result, final List<String> shape, final Map<String, String> ingredients) {
+	private final void createRecipe(final ItemStack result, final List<String> shape, Map<String, String> ingredients) {
 		final ShapedRecipe recipe = new ShapedRecipe(result);
 		recipe.shape(shape.toArray(new String[shape.size()]));
+		if(ingredients.equals(config.shapeMaterials)) {
+			ingredients = Utils.keepAll(ingredients, shape);
+		}
 		for(final Entry<String, String> entry : ingredients.entrySet()) {
 			recipe.setIngredient(entry.getKey().charAt(0), Material.valueOf(entry.getValue()));
 		}
