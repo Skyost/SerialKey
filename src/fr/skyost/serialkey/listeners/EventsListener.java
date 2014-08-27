@@ -9,17 +9,20 @@ import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
+import org.bukkit.block.DoubleChest;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityBreakDoorEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.CraftingInventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -35,7 +38,7 @@ public class EventsListener implements Listener {
 		final Player player = (Player)event.getView().getPlayer();
 		final ItemStack keyClone = SerialKeyAPI.getKeyCloneItem();
 		if((result.equals(SerialKeyAPI.getKeyItem()) && !player.hasPermission("serialkey.craft.key")) || (result.equals(SerialKeyAPI.getMasterKeyItem()) && !player.hasPermission("serialkey.craft.masterkey")) || (result.equals(keyClone) && !player.hasPermission("serialkey.craft.keyclone"))) {
-			player.sendMessage(SerialKeyAPI.getMessages().message6);
+			SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message6);
 			event.getInventory().setResult(null);
 			return;
 		}
@@ -92,16 +95,16 @@ public class EventsListener implements Listener {
 			}
 			final Location location = clicked.getLocation();
 			if(SerialKeyAPI.hasPadlock(location)) {
-				event.getPlayer().sendMessage(!(state instanceof Chest) ? SerialKeyAPI.getMessages().message2 : SerialKeyAPI.getMessages().message3);
+				SerialKeyAPI.sendMessage(event.getPlayer(), !(state instanceof Chest) ? SerialKeyAPI.getMessages().message2 : SerialKeyAPI.getMessages().message3);
 				return;
 			}
 			final Player player = event.getPlayer();
 			if(!player.hasPermission("serialkey.use.key")) {
-				player.sendMessage(SerialKeyAPI.getMessages().message6);
+				SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message6);
 				return;
 			}
 			SerialKeyAPI.createPadlock(location, inHand);
-			player.sendMessage(SerialKeyAPI.getMessages().message1);
+			SerialKeyAPI.sendMessage(event.getPlayer(), SerialKeyAPI.getMessages().message1);
 			event.setCancelled(true);
 		}
 		else if(action == Action.RIGHT_CLICK_BLOCK) {
@@ -110,7 +113,7 @@ public class EventsListener implements Listener {
 				return;
 			}
 			if(!SerialKeyAPI.isValidKey(event.getItem(), clicked.getLocation())) {
-				event.getPlayer().sendMessage(SerialKeyAPI.getMessages().message5);
+				SerialKeyAPI.sendMessage(event.getPlayer(), SerialKeyAPI.getMessages().message5);
 				event.setCancelled(true);
 				return;
 			}
@@ -136,11 +139,27 @@ public class EventsListener implements Listener {
 				player.playSound(player.getLocation(), Sound.ITEM_BREAK, 1f, 1f);
 			}
 			SerialKeyAPI.removePadlock(location);
-			player.sendMessage(SerialKeyAPI.getMessages().message4);
+			SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message4);
 		}
 		else {
-			player.sendMessage(SerialKeyAPI.getMessages().message5);
-			event.setCancelled(true);
+			SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message5);
+		}
+		event.setCancelled(true);
+	}
+	
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
+	private final void onBlockPlace(final BlockPlaceEvent event) {
+		final Block block = event.getBlockPlaced();
+		final BlockState state = block.getState();
+		if(state instanceof Chest) {
+			final InventoryHolder holder = ((Chest)state).getInventory().getHolder();
+			if(holder instanceof DoubleChest) {
+				final DoubleChest doubleChest = (DoubleChest)holder;
+				if(SerialKeyAPI.hasPadlock(((Chest)doubleChest.getRightSide()).getLocation(), false) && !((Chest)doubleChest.getRightSide()).getLocation().equals(block.getLocation())) {
+					SerialKeyAPI.sendMessage(event.getPlayer(), SerialKeyAPI.getMessages().message7);
+					event.setCancelled(true);
+				}
+			}
 		}
 	}
 	

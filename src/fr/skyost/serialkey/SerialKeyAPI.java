@@ -13,6 +13,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
 import org.bukkit.block.DoubleChest;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -64,6 +65,10 @@ public class SerialKeyAPI {
 	
 	public static final ItemStack getKeyCloneItem() {
 		return SerialKey.keyClone.clone();
+	}
+	
+	public static final void sendMessage(final CommandSender sender, final String message) {
+		sender.sendMessage(SerialKey.messages.prefix + " " + message);
 	}
 	
 	/**
@@ -130,7 +135,23 @@ public class SerialKeyAPI {
 	 */
 	
 	public static final boolean hasPadlock(final Location location) {
-		correctLocation(location);
+		return hasPadlock(location, true);
+	}
+	
+	/**
+	 * Checks if the specified location has a padlock.
+	 * 
+	 * @param location The location.
+	 * @param correct If you want to automatically correct the location.
+	 * 
+	 * @return <b>true</b> : yes.
+	 * <br /><b>false</b> : no.
+	 */
+	
+	public static final boolean hasPadlock(final Location location, final boolean correct) {
+		if(correct) {
+			correctLocation(location);
+		}
 		return SerialKey.data.padlocks.contains(location);
 	}
 	
@@ -138,7 +159,7 @@ public class SerialKeyAPI {
 	 * Checks if the specified item is a valid key for the specified location.
 	 * 
 	 * @param key The key.
-	 * @param location The location.
+	 * @param location The location (will not be corrected).
 	 * 
 	 * @return <b>true</b> : yes.
 	 * <br /><b>false</b> : no.
@@ -153,7 +174,7 @@ public class SerialKeyAPI {
 	 * 
 	 * @param key The key.
 	 * @param location The location (can be corrected if needed).
-	 * @param player If you want to check if the player the right permission. Will send a message elsewhere.
+	 * @param player If you want to check if the player has the right permission. Will send a message elsewhere.
 	 * 
 	 * @return <b>true</b> : yes.
 	 * <br /><b>false</b> : no.
