@@ -1,5 +1,6 @@
 package fr.skyost.serialkey.listeners;
 
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -30,7 +31,8 @@ public class BunchOfKeysListener implements Listener {
 	@EventHandler
 	private final void onInventoryClick(final InventoryClickEvent event) {
 		if(SerialKeyAPI.isBunchOfKeys(event.getInventory())) {
-			if(!SerialKeyAPI.isUsedKey(event.getCurrentItem())) {
+			final ItemStack item = event.getCurrentItem();
+			if(item.getType() != Material.AIR && !SerialKeyAPI.isUsedKey(item)) {
 				event.setCancelled(true);
 			}
 		}

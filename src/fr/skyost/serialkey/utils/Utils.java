@@ -10,13 +10,14 @@ import java.util.Random;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
 import org.bukkit.block.DoubleChest;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+
+import fr.skyost.serialkey.SerialKeyAPI;
 
 public class Utils {
 	
@@ -91,22 +92,48 @@ public class Utils {
 	 * Corrects a location (used to handle doors because they are composed from two blocks and double chests too).
 	 * 
 	 * @param location The location.
+	 * 
+	 * @return <b>true :</b> If the location has been corrected.
+	 * <br /><b>false :</b> Otherwise.
 	 */
 	
 	public static final boolean correctLocation(final Location location) {
+		if(SerialKeyAPI.hasPadlock(location, false)) {
+			return false;
+		}
 		final Block block = location.getBlock();
 		final BlockState state = block.getState();
 		if(state instanceof Chest) {
 			final InventoryHolder holder = ((Chest)state).getInventory().getHolder();
 			if(holder instanceof DoubleChest) {
 				final Location left = ((Chest)((DoubleChest)holder).getLeftSide()).getLocation();
-				location.setX(left.getX());
-				location.setZ(left.getZ());
-				return true;
+				if(SerialKeyAPI.hasPadlock(left, false)) {
+					location.setX(left.getX());
+					location.setZ(left.getZ());
+					return true;
+				}
+				final Location right = ((Chest)((DoubleChest)holder).getRightSide()).getLocation();
+				if(SerialKeyAPI.hasPadlock(right, false)) {
+					location.setX(right.getX());
+					location.setZ(right.getZ());
+					return true;
+				}
 			}
 		}
-		else if(state.getData() instanceof org.bukkit.material.Door) { // TODO Handle double doors.
-			location.setY(location.getBlockY() - (block.getRelative(BlockFace.DOWN).getState().getData() instanceof org.bukkit.material.Door ?  2 : 1));
+		else if(DoorUtils.instanceOf(state.getData())) {
+			location.setY(DoorUtils.getBlockBelow(block).getY());
+			if(SerialKeyAPI.hasPadlock(location, false)) {
+				return true;
+			}
+			final Block doubleDoor = DoorUtils.getDoubleDoor(block);
+			if(doubleDoor != null) {
+				final Location doubleDoorLocation = doubleDoor.getLocation();
+				doubleDoorLocation.setY(location.getY());
+				if(SerialKeyAPI.hasPadlock(doubleDoorLocation, false)) {
+					location.setX(doubleDoorLocation.getX());
+					location.setZ(doubleDoorLocation.getZ());
+				}
+			}
 			return true;
 		}
 		return false;

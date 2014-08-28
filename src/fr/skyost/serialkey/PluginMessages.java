@@ -23,8 +23,6 @@ public class PluginMessages extends Skyoconfig {
 	public String message5 = ChatColor.RED + "This block has a padlock.";
 	@ConfigOptions(name = "messages.6")
 	public String message6 = ChatColor.RED + "You do not have the permission to perform this action.";
-	@ConfigOptions(name = "messages.7")
-	public String message7 = ChatColor.RED + "You must place this chest on the right of the other chest.";
 
 	protected PluginMessages(final File dataFolder) {
 		super(new File(dataFolder, "messages.yml"), Arrays.asList("SerialKey messages"));

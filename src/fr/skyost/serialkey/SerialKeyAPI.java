@@ -163,13 +163,40 @@ public class SerialKeyAPI {
 		return SerialKey.data.padlocks.contains(location);
 	}
 	
+	/**
+	 * Checks if the specified item is a key (blank or used).
+	 * 
+	 * @param item The item.
+	 * 
+	 * @return <b>true :</b> yes.
+	 * <br /><b>false :</b> no.
+	 */
+	
 	public static final boolean isKey(final ItemStack item) {
 		return Utils.isValidItem(item) && item.getType() == SerialKey.config.keyMaterial && item.getItemMeta().getDisplayName().equals(SerialKey.config.keyName);
 	}
 	
+	/**
+	 * Checks if the specified item is a blank key.
+	 * 
+	 * @param item The item.
+	 * 
+	 * @return <b>true :</b> yes.
+	 * <br /><b>false :</b> no.
+	 */
+	
 	public static final boolean isBlankKey(final ItemStack item) {
 		return isKey(item) && !item.getItemMeta().hasLore();
 	}
+	
+	/**
+	 * Checks if the specified item is an used key.
+	 * 
+	 * @param item The item.
+	 * 
+	 * @return <b>true :</b> yes.
+	 * <br /><b>false :</b> no.
+	 */
 	
 	public static final boolean isUsedKey(final ItemStack item) {
 		if(!isKey(item)) {
@@ -179,24 +206,69 @@ public class SerialKeyAPI {
 		return lore != null && lore.size() == 2;
 	}
 	
+	/**
+	 * Checks if the specified item is a master key.
+	 * 
+	 * @param item The item.
+	 * 
+	 * @return <b>true :</b> yes.
+	 * <br /><b>false :</b> no.
+	 */
+	
 	public static final boolean isMasterKey(final ItemStack item) {
 		return Utils.isValidItem(item) && item.getType() == SerialKey.config.masterKeyMaterial && item.getItemMeta().getDisplayName().equals(SerialKey.config.masterKeyName);
 	}
+	
+	/**
+	 * Checks if the specified item is a bunch of keys (blank or used).
+	 * 
+	 * @param item The item.
+	 * 
+	 * @return <b>true :</b> yes.
+	 * <br /><b>false :</b> no.
+	 */
 	
 	public static final boolean isBunchOfKeys(final ItemStack item) {
 		return Utils.isValidItem(item) && item.getType() == SerialKey.config.bunchOfKeysMaterial && item.getItemMeta().getDisplayName().equals(SerialKey.config.bunchOfKeysName);
 	}
 	
+	/**
+	 * Checks if the specified inventory is a bunch of keys (blank or used).
+	 * 
+	 * @param item The item.
+	 * 
+	 * @return <b>true :</b> yes.
+	 * <br /><b>false :</b> no.
+	 */
+	
+	public static final boolean isBunchOfKeys(final Inventory inventory) {
+		return inventory.getName().equals(SerialKey.config.bunchOfKeysName) && inventory.getSize() == 9;
+	}
+	
+	/**
+	 * Checks if the specified item is a blank bunch of keys.
+	 * 
+	 * @param item The item.
+	 * 
+	 * @return <b>true :</b> yes.
+	 * <br /><b>false :</b> no.
+	 */
+	
 	public static final boolean isBlankBunchOfKeys(final ItemStack item) {
 		return isBunchOfKeys(item) && !item.getItemMeta().hasLore();
 	}
 	
+	/**
+	 * Checks if the specified item is an used bunch of keys.
+	 * 
+	 * @param item The item.
+	 * 
+	 * @return <b>true :</b> yes.
+	 * <br /><b>false :</b> no.
+	 */
+	
 	public static final boolean isUsedBunchOfKeys(final ItemStack item) {
 		return isBunchOfKeys(item) && item.getItemMeta().hasLore();
-	}
-	
-	public static final boolean isBunchOfKeys(final Inventory inventory) {
-		return inventory.getName().equals(SerialKey.config.bunchOfKeysName) && inventory.getSize() == 9;
 	}
 	
 	/**
@@ -227,7 +299,7 @@ public class SerialKeyAPI {
 	public static final boolean isValidKey(final ItemStack key, final Location location, final Player player) {
 		if(isMasterKey(key)) {
 			if(player != null && !player.hasPermission("serialkey.use.masterkey")) {
-				player.sendMessage(SerialKey.messages.message6);
+				sendMessage(player, SerialKey.messages.message6);
 			}
 			return true;
 		}
@@ -235,18 +307,18 @@ public class SerialKeyAPI {
 		final Location keyLocation = extractLocation(key);
 		if(keyLocation != null && keyLocation.equals(location)) {
 			if(player != null && !player.hasPermission("serialkey.use.key")) {
-				player.sendMessage(SerialKey.messages.message6);
+				sendMessage(player, SerialKey.messages.message6);
 			}
 			return true;
 		}
 		final ItemStack[] extractedKeys = extractKeys(key);
-		if(extractedKeys != null && extractedKeys.length != 0) {
+		if(extractedKeys != null) {
 			if(player != null && !player.hasPermission("serialkey.use.bunchofkeys")) {
-				player.sendMessage(SerialKey.messages.message6);
+				sendMessage(player, SerialKey.messages.message6);
 				return true;
 			}
 			for(final ItemStack extractedKey : extractedKeys) {
-				if(isValidKey(extractedKey, location, player)) {
+				if(isValidKey(extractedKey, location, null)) {
 					return true;
 				}
 			}
@@ -254,11 +326,19 @@ public class SerialKeyAPI {
 		return false;
 	}
 	
-	public static final Location extractLocation(final ItemStack item) {
-		if(!isUsedKey(item)) {
+	/**
+	 * Extracts a location from a key.
+	 * 
+	 * @param key The key.
+	 * 
+	 * @return The location.
+	 */
+	
+	public static final Location extractLocation(final ItemStack key) {
+		if(!isUsedKey(key)) {
 			return null;
 		}
-		final List<String> lore = item.getItemMeta().getLore();
+		final List<String> lore = key.getItemMeta().getLore();
 		final World world = Bukkit.getWorld(ChatColor.stripColor(lore.get(0)));
 		if(world == null) {
 			return null;
@@ -269,7 +349,7 @@ public class SerialKeyAPI {
 		}
 		final Location itemLocation = new Location(world, Integer.parseInt(rawLocation[0]), Integer.parseInt(rawLocation[1]), Integer.parseInt(rawLocation[2]));
 		if(Utils.correctLocation(itemLocation)) {
-			formatKey(itemLocation, item);
+			formatKey(itemLocation, key);
 		}
 		return itemLocation;
 	}
@@ -305,6 +385,13 @@ public class SerialKeyAPI {
 		key.setItemMeta(meta);
 	}
 	
+	/**
+	 * Adds a key to a bunch of keys.
+	 * 
+	 * @param bunchOfKeys The bunch of keys.
+	 * @param key The key.
+	 */
+	
 	public static final void addKey(final ItemStack bunchOfKeys, final ItemStack key) {
 		if(!isBunchOfKeys(bunchOfKeys) || !isUsedKey(key)) {
 			return;
@@ -315,6 +402,13 @@ public class SerialKeyAPI {
 		meta.setLore(lore);
 		bunchOfKeys.setItemMeta(meta);
 	}
+	
+	/**
+	 * Removes a key from a bunch of keys.
+	 * 
+	 * @param bunchOfKeys The bunch of keys.
+	 * @param key The key.
+	 */
 	
 	public static final void removeKey(final ItemStack bunchOfKeys, final ItemStack key) {
 		if(!isUsedBunchOfKeys(bunchOfKeys) || !isUsedKey(key)) {
@@ -334,6 +428,12 @@ public class SerialKeyAPI {
 		key.setItemMeta(meta);
 	}
 	
+	/**
+	 * Clear a bunch of keys.
+	 * 
+	 * @param bunchOfKeys The bunch of keys.
+	 */
+	
 	public static final void clearKeys(final ItemStack bunchOfKeys) {
 		if(!isUsedBunchOfKeys(bunchOfKeys)) {
 			return;
@@ -342,6 +442,14 @@ public class SerialKeyAPI {
 		meta.setLore(null);
 		bunchOfKeys.setItemMeta(meta);
 	}
+	
+	/**
+	 * Extracts a key from a bunch of keys.
+	 * 
+	 * @param bunchOfKeys The bunch of keys.
+	 * 
+	 * @return The keys.
+	 */
 	
 	public static final ItemStack[] extractKeys(final ItemStack bunchOfKeys) {
 		if(!isUsedBunchOfKeys(bunchOfKeys)) {
@@ -358,6 +466,8 @@ public class SerialKeyAPI {
 		}
 		return keys.toArray(new ItemStack[keys.size()]);
 	}
+	
+	
 	
 	public static final Inventory createInventory(final ItemStack bunchOfKeys) {
 		return createInventory(bunchOfKeys, new Player[]{});

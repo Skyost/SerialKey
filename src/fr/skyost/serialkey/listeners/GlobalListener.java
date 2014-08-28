@@ -17,6 +17,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import fr.skyost.serialkey.PluginConfig;
 import fr.skyost.serialkey.SerialKeyAPI;
+import fr.skyost.serialkey.utils.DoorUtils;
 
 public class GlobalListener implements Listener {
 	
@@ -63,7 +64,7 @@ public class GlobalListener implements Listener {
 			return;
 		}
 		final BlockState state = clicked.getState();
-		if(!(state instanceof Chest) && !(state.getData() instanceof org.bukkit.material.Door)) {
+		if(!(state instanceof Chest) && !DoorUtils.instanceOf(state.getData())) {
 			return;
 		}
 		final Action action = event.getAction();
