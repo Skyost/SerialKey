@@ -14,6 +14,8 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.material.MaterialData;
+import org.bukkit.material.TrapDoor;
 
 import fr.skyost.serialkey.PluginConfig;
 import fr.skyost.serialkey.SerialKeyAPI;
@@ -64,8 +66,11 @@ public class GlobalListener implements Listener {
 			return;
 		}
 		final BlockState state = clicked.getState();
-		if(!(state instanceof Chest) && !DoorUtils.instanceOf(state.getData())) {
-			return;
+		if(!(state instanceof Chest)) {
+			final MaterialData data = state.getData();
+			if(!DoorUtils.instanceOf(data) && !(data instanceof TrapDoor)) {
+				return;
+			}
 		}
 		final Action action = event.getAction();
 		final ItemStack item = event.getItem();

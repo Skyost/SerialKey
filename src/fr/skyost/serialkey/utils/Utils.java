@@ -16,6 +16,8 @@ import org.bukkit.block.DoubleChest;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.material.MaterialData;
+import org.bukkit.material.TrapDoor;
 
 import fr.skyost.serialkey.SerialKeyAPI;
 
@@ -119,8 +121,10 @@ public class Utils {
 					return true;
 				}
 			}
+			return false;
 		}
-		else if(DoorUtils.instanceOf(state.getData())) {
+		final MaterialData data = state.getData();
+		if(DoorUtils.instanceOf(data)) {
 			location.setY(DoorUtils.getBlockBelow(block).getY());
 			if(SerialKeyAPI.hasPadlock(location, false)) {
 				return true;
@@ -134,6 +138,12 @@ public class Utils {
 					location.setZ(doubleDoorLocation.getZ());
 				}
 			}
+			return true;
+		}
+		if(data instanceof TrapDoor) {
+			final Block attached = block.getRelative(((TrapDoor)data).getAttachedFace());
+			location.setX(attached.getX());
+			location.setZ(attached.getZ());
 			return true;
 		}
 		return false;
