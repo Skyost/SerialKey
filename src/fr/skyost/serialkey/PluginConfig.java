@@ -38,7 +38,10 @@ public class PluginConfig extends Skyoconfig {
 	@ConfigOptions(name = "bunch-of-keys.shape")
 	public List<String> bunchOfKeysShape = Arrays.asList(" D ", "DBD", " D ");
 	
-	@ConfigOptions(name = "shape-materials")
+	@ConfigOptions(name = "padlock-finder.name")
+	public String padlockFinderName = ChatColor.RED + "Padlock finder";
+	
+	@ConfigOptions(name = "shape-materials-v1")
 	public LinkedHashMap<String, String> shapeMaterials = new LinkedHashMap<String, String>();
 	
 	protected PluginConfig(final File dataFolder) {

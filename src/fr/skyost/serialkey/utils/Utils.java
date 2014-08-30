@@ -9,15 +9,18 @@ import java.util.Random;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
 import org.bukkit.block.DoubleChest;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
 import org.bukkit.material.TrapDoor;
+import org.bukkit.util.BlockIterator;
 
 import fr.skyost.serialkey.SerialKeyAPI;
 
@@ -147,6 +150,26 @@ public class Utils {
 			return true;
 		}
 		return false;
+	}
+	
+	/**
+	 * Gets the block targeted by a LivingEntity.
+	 * 
+	 * @param entity The LivingEntity.
+	 * @param range The range.
+	 * 
+	 * @return The block.
+	 */
+	
+	public static final Block getTargetBlock(final LivingEntity entity, final int range) {
+		final BlockIterator bit = new BlockIterator(entity, range);
+		while(bit.hasNext()) {
+			final Block next = bit.next();
+			if(next != null && next.getType() != Material.AIR) {
+				return next;
+			}
+		}
+		return null;
 	}
 
 }

@@ -7,6 +7,7 @@ import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -17,6 +18,16 @@ import org.bukkit.inventory.meta.ItemMeta;
 import fr.skyost.serialkey.utils.Utils;
 
 public class SerialKeyAPI {
+	
+	/**
+	 * Gets the SerialKey's instance.
+	 * 
+	 * @return The SerialKey's instance.
+	 */
+	
+	public static final SerialKey getPlugin() {
+		return (SerialKey)Bukkit.getPluginManager().getPlugin("SerialKey");
+	}
 	
 	/**
 	 * Gets the plugin's config.
@@ -69,6 +80,16 @@ public class SerialKeyAPI {
 	}
 	
 	/**
+	 * Gets the padlock finder item.
+	 * 
+	 * @return The padlock finder item.
+	 */
+	
+	public static final ItemStack getPadlockFinderItem() {
+		return SerialKey.padlockFinder.clone();
+	}
+	
+	/**
 	 * Sends a message with the plugin's prefix.
 	 * 
 	 * @param sender Who receive the message.
@@ -101,7 +122,7 @@ public class SerialKeyAPI {
 		Utils.correctLocation(location);
 		SerialKey.data.padlocks.add(location);
 		if(isBlankKey(key)) {
-			formatKey(location, key);
+			formatItem(location, key);
 		}
 	}
 	
@@ -272,6 +293,45 @@ public class SerialKeyAPI {
 	}
 	
 	/**
+	 * Checks if the specified item is a padlock finder (blank or used).
+	 * 
+	 * @param item The item.
+	 * 
+	 * @return <b>true :</b> yes.
+	 * <br /><b>false :</b> no.
+	 */
+	
+	public static final boolean isPadlockFinder(final ItemStack item) {
+		return Utils.isValidItem(item) && item.getType() == Material.COMPASS && item.getItemMeta().getDisplayName().equals(SerialKey.config.padlockFinderName);
+	}
+	
+	/**
+	 * Checks if the specified item is a blank padlock finder.
+	 * 
+	 * @param item The item.
+	 * 
+	 * @return <b>true :</b> yes.
+	 * <br /><b>false :</b> no.
+	 */
+	
+	public static final boolean isBlankPadlockFinder(final ItemStack item) {
+		return isPadlockFinder(item) && !item.getItemMeta().hasLore();
+	}
+	
+	/**
+	 * Checks if the specified item is an used padlock finder.
+	 * 
+	 * @param item The item.
+	 * 
+	 * @return <b>true :</b> yes.
+	 * <br /><b>false :</b> no.
+	 */
+	
+	public static final boolean isUsedPadlockFinder(final ItemStack item) {
+		return isPadlockFinder(item) && item.getItemMeta().hasLore();
+	}
+	
+	/**
 	 * Checks if the specified item is a valid key for the specified location.
 	 * 
 	 * @param key The key.
@@ -299,7 +359,7 @@ public class SerialKeyAPI {
 	public static final boolean isValidKey(final ItemStack key, final Location location, final Player player) {
 		if(isMasterKey(key)) {
 			if(player != null && !player.hasPermission("serialkey.use.masterkey")) {
-				sendMessage(player, SerialKey.messages.message6);
+				sendMessage(player, SerialKey.messages.messagePermission);
 			}
 			return true;
 		}
@@ -307,14 +367,14 @@ public class SerialKeyAPI {
 		final Location keyLocation = extractLocation(key);
 		if(keyLocation != null && keyLocation.equals(location)) {
 			if(player != null && !player.hasPermission("serialkey.use.key")) {
-				sendMessage(player, SerialKey.messages.message6);
+				sendMessage(player, SerialKey.messages.messagePermission);
 			}
 			return true;
 		}
 		final ItemStack[] extractedKeys = extractKeys(key);
 		if(extractedKeys != null) {
 			if(player != null && !player.hasPermission("serialkey.use.bunchofkeys")) {
-				sendMessage(player, SerialKey.messages.message6);
+				sendMessage(player, SerialKey.messages.messagePermission);
 				return true;
 			}
 			for(final ItemStack extractedKey : extractedKeys) {
@@ -327,18 +387,19 @@ public class SerialKeyAPI {
 	}
 	
 	/**
-	 * Extracts a location from a key.
+	 * Extracts a location from a key or a padlock finder.
 	 * 
-	 * @param key The key.
+	 * @param item The item.
 	 * 
 	 * @return The location.
 	 */
 	
-	public static final Location extractLocation(final ItemStack key) {
-		if(!isUsedKey(key)) {
+	public static final Location extractLocation(final ItemStack item) {
+		boolean isKey = isUsedKey(item);
+		if(!isKey && !isUsedPadlockFinder(item)) {
 			return null;
 		}
-		final List<String> lore = key.getItemMeta().getLore();
+		final List<String> lore = item.getItemMeta().getLore();
 		final World world = Bukkit.getWorld(ChatColor.stripColor(lore.get(0)));
 		if(world == null) {
 			return null;
@@ -348,8 +409,8 @@ public class SerialKeyAPI {
 			return null;
 		}
 		final Location itemLocation = new Location(world, Integer.parseInt(rawLocation[0]), Integer.parseInt(rawLocation[1]), Integer.parseInt(rawLocation[2]));
-		if(Utils.correctLocation(itemLocation)) {
-			formatKey(itemLocation, key);
+		if(isKey && Utils.correctLocation(itemLocation)) {
+			formatItem(itemLocation, item);
 		}
 		return itemLocation;
 	}
@@ -364,25 +425,39 @@ public class SerialKeyAPI {
 	
 	public static final ItemStack getKey(final Location location) {
 		final ItemStack key = getKeyItem();
-		formatKey(location, key);
+		formatItem(location, key);
 		return key;
+	}
+	
+	/**
+	 * Gets a padlock finder for the specified location.
+	 * 
+	 * @param location The location (will not be corrected).
+	 * 
+	 * @return The padlock finder.
+	 */
+	
+	public static final ItemStack getPadlockFinder(final Location location) {
+		final ItemStack padlockFinder = getPadlockFinderItem();
+		formatItem(location, padlockFinder);
+		return padlockFinder;
 	}
 	
 	/**
 	 * Formats a key for the specified location.
 	 * 
 	 * @param location The location (will not be corrected).
-	 * @param key The key.
+	 * @param item The key.
 	 */
 	
-	public static final void formatKey(final Location location, final ItemStack key) {
-		if(!isKey(key)) {
+	public static final void formatItem(final Location location, final ItemStack item) {
+		if(!isKey(item) && !isPadlockFinder(item)) {
 			return;
 		}
 		final ChatColor color = Utils.randomChatColor(ChatColor.BOLD, ChatColor.ITALIC, ChatColor.UNDERLINE, ChatColor.STRIKETHROUGH, ChatColor.MAGIC);
-		final ItemMeta meta = key.getItemMeta();
+		final ItemMeta meta = item.getItemMeta();
 		meta.setLore(Arrays.asList(color + location.getWorld().getName(), color + String.valueOf(location.getBlockX()) + ", " + location.getBlockY() + ", " + location.getBlockZ()));
-		key.setItemMeta(meta);
+		item.setItemMeta(meta);
 	}
 	
 	/**
@@ -408,24 +483,32 @@ public class SerialKeyAPI {
 	 * 
 	 * @param bunchOfKeys The bunch of keys.
 	 * @param key The key.
+	 * 
+	 * @return The number of deleted keys.
 	 */
 	
-	public static final void removeKey(final ItemStack bunchOfKeys, final ItemStack key) {
+	public static final short removeKey(final ItemStack bunchOfKeys, final ItemStack key) {
 		if(!isUsedBunchOfKeys(bunchOfKeys) || !isUsedKey(key)) {
-			return;
+			return 0;
 		}
 		final ItemMeta meta = bunchOfKeys.getItemMeta();
-		final List<String> lore = new ArrayList<String>(meta.getLore());
+		final List<String> lore = meta.getLore();
 		final List<String> keyLore = key.getItemMeta().getLore();
+		for(final String line : new ArrayList<String>(keyLore)) {
+			keyLore.remove(line);
+			keyLore.add(ChatColor.stripColor(line));
+		}
+		short deleted = 0;
 		for(int i = 0; i != lore.size(); i++) {
-			final List<String> data = Arrays.asList(lore.get(i), lore.get(++i));
-			if(data.equals(keyLore)) {
-				lore.removeAll(data);
-				break;
+			final String world = lore.get(i);
+			final String location = lore.get(++i);
+			if(keyLore.equals(Arrays.asList(ChatColor.stripColor(world), ChatColor.stripColor(location))) && lore.removeAll(Arrays.asList(world, location))) {
+				deleted++;
 			}
 		}
 		meta.setLore(lore.size() == 0 ? null : lore);
-		key.setItemMeta(meta);
+		bunchOfKeys.setItemMeta(meta);
+		return deleted;
 	}
 	
 	/**

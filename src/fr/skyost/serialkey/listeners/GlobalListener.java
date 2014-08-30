@@ -1,6 +1,7 @@
 package fr.skyost.serialkey.listeners;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
@@ -23,19 +24,20 @@ import fr.skyost.serialkey.utils.DoorUtils;
 
 public class GlobalListener implements Listener {
 	
-	@EventHandler
+	@EventHandler(ignoreCancelled = true)
 	private final void onPrepareItemCraft(final PrepareItemCraftEvent event) {
 		final CraftingInventory craftingTable = event.getInventory();
 		final ItemStack result = craftingTable.getResult();
 		final Player player = (Player)event.getView().getPlayer();
-		final boolean isKeyClone = SerialKeyAPI.isBlankKey(result) && result.getAmount() == 2;
-		if((SerialKeyAPI.isBlankKey(result) && !player.hasPermission("serialkey.craft.key")) || (SerialKeyAPI.isMasterKey(result) && !player.hasPermission("serialkey.craft.masterkey")) || (isKeyClone && !player.hasPermission("serialkey.craft.keyclone")) || (SerialKeyAPI.isBlankBunchOfKeys(result) && !player.hasPermission("serialkey.craft.bunchofkeys"))) {
-			SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message6);
+		final boolean isKeyClone = SerialKeyAPI.getKeyCloneItem().equals(result);
+		final boolean isPadlockFinder = SerialKeyAPI.isPadlockFinder(result);
+		if((SerialKeyAPI.isBlankKey(result) && !player.hasPermission("serialkey.craft.key")) || (SerialKeyAPI.isMasterKey(result) && !player.hasPermission("serialkey.craft.masterkey")) || (isKeyClone && !player.hasPermission("serialkey.craft.keyclone")) || (SerialKeyAPI.isBlankBunchOfKeys(result) && !player.hasPermission("serialkey.craft.bunchofkeys")) || (isPadlockFinder && !player.hasPermission("serialkey.craft.padlockfinder"))) {
+			SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().messagePermission);
 			event.getInventory().setResult(null);
 			return;
 		}
+		final PluginConfig config = SerialKeyAPI.getConfig();
 		if(isKeyClone) {
-			final PluginConfig config = SerialKeyAPI.getConfig();
 			ItemStack key = null;
 			ItemStack blankKey = null;
 			for(final ItemStack item : craftingTable.all(config.keyMaterial).values()) {
@@ -57,9 +59,28 @@ public class GlobalListener implements Listener {
 			meta.setLore(key.getItemMeta().getLore());
 			result.setItemMeta(meta);
 		}
+		else if(isPadlockFinder) {
+			ItemStack key = null;
+			ItemStack compass = null;
+			for(final ItemStack item : craftingTable.getMatrix()) {
+				if(SerialKeyAPI.isUsedKey(item)) {
+					key = item;
+				}
+				else if(item != null && item.getType() == Material.COMPASS) {
+					compass = item;
+				}
+			}
+			if(key == null || compass == null) {
+				craftingTable.setResult(null);
+				return;
+			}
+			final ItemMeta meta = result.getItemMeta();
+			meta.setLore(key.getItemMeta().getLore());
+			result.setItemMeta(meta);
+		}
 	}
 	
-	@EventHandler(ignoreCancelled = false, priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.HIGHEST)
 	private final void onPlayerInteract(final PlayerInteractEvent event) {
 		final Block clicked = event.getClickedBlock();
 		if(clicked == null) {
@@ -75,17 +96,18 @@ public class GlobalListener implements Listener {
 		final Action action = event.getAction();
 		final ItemStack item = event.getItem();
 		if(action == Action.LEFT_CLICK_BLOCK) {
-			if(!SerialKeyAPI.isBlankKey(item)) {
+			boolean isBlankKey = SerialKeyAPI.isBlankKey(item);
+			if(!isBlankKey && !SerialKeyAPI.isMasterKey(item)) {
 				return;
 			}
 			final Player player = event.getPlayer();
-			if(!player.hasPermission("serialkey.use.key")) {
-				SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message6);
+			if(isBlankKey ? !player.hasPermission("serialkey.use.key") : !player.hasPermission("serialkey.use.masterkey")) {
+				SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().messagePermission);
 				return;
 			}
 			final Location location = clicked.getLocation();
 			if(SerialKeyAPI.hasPadlock(location)) {
-				SerialKeyAPI.sendMessage(event.getPlayer(), !(state instanceof Chest) ? SerialKeyAPI.getMessages().message2 : SerialKeyAPI.getMessages().message3);
+				SerialKeyAPI.sendMessage(event.getPlayer(), SerialKeyAPI.getMessages().message3);
 				return;
 			}
 			SerialKeyAPI.createPadlock(location, item);
@@ -98,7 +120,7 @@ public class GlobalListener implements Listener {
 				return;
 			}
 			if(!SerialKeyAPI.isValidKey(item, location)) {
-				SerialKeyAPI.sendMessage(event.getPlayer(), SerialKeyAPI.getMessages().message5);
+				SerialKeyAPI.sendMessage(event.getPlayer(), SerialKeyAPI.getMessages().message3);
 				event.setCancelled(true);
 				return;
 			}

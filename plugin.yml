@@ -3,6 +3,11 @@ main: fr.skyost.serialkey.SerialKey
 author: Skyost
 version: 0.2
 website: http://www.skyost.eu
+commands:
+  serialkey:
+    description: Main command of SerialKey.
+    aliases: [serial-key, sk]
+    usage: /serialkey getkey.
 permissions:
   serialkey.craft.key:
     default: true
@@ -16,6 +21,9 @@ permissions:
   serialkey.craft.bunchofkeys:
     default: true
     description: Allows you to craft a bunch of keys.
+  serialkey.craft.padlockfinder:
+    default: true
+    description: Allows you to craft a padlock finder.
   serialkey.use.key:
     default: true
     description: Allows you to use a key.
@@ -25,3 +33,9 @@ permissions:
   serialkey.use.bunchofkeys:
     default: true
     description: Allows you to use a bunch of keys.
+  serialkey.use.padlockfinder:
+    default: true
+    description: Allows you to use a padlock finder.
+  serialkey.command.getkey:
+    default: op
+    description: Allows you to use /serialkey getkey.
