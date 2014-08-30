@@ -1,18 +1,24 @@
 package fr.skyost.serialkey.listeners;
 
+import java.util.HashSet;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.CraftingInventory;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
@@ -23,6 +29,8 @@ import fr.skyost.serialkey.SerialKeyAPI;
 import fr.skyost.serialkey.utils.DoorUtils;
 
 public class GlobalListener implements Listener {
+	
+	private final HashSet<CraftingInventory> padlockFinders = new HashSet<CraftingInventory>();
 	
 	@EventHandler(ignoreCancelled = true)
 	private final void onPrepareItemCraft(final PrepareItemCraftEvent event) {
@@ -77,6 +85,27 @@ public class GlobalListener implements Listener {
 			final ItemMeta meta = result.getItemMeta();
 			meta.setLore(key.getItemMeta().getLore());
 			result.setItemMeta(meta);
+			padlockFinders.add(craftingTable);
+		}
+	}
+	
+	@EventHandler
+	private final void onInventoryClick(final InventoryClickEvent event) {
+		final Inventory inventory = event.getInventory();
+		if(padlockFinders.contains(inventory)) {
+			final ItemStack item = event.getCurrentItem();
+			if(SerialKeyAPI.isUsedPadlockFinder(item)) {
+				final HumanEntity player = event.getWhoClicked();
+				player.getWorld().dropItemNaturally(player.getEyeLocation(), SerialKeyAPI.getKey(SerialKeyAPI.extractLocation(item)));
+			}
+		}
+	}
+	
+	@EventHandler
+	private final void onInventoryClose(final InventoryCloseEvent event) {
+		final Inventory inventory = event.getInventory();
+		if(padlockFinders.contains(inventory)) {
+			padlockFinders.remove(inventory);
 		}
 	}
 	
