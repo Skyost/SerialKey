@@ -12,6 +12,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.entity.EntityBreakDoorEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.inventory.ItemStack;
@@ -84,6 +85,13 @@ public class BlocksListener implements Listener {
 			if(SerialKeyAPI.hasPadlock(block.getLocation())) {
 				event.blockList().remove(block);
 			}
+		}
+	}
+	
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
+	private final void onBlockRedstone(final BlockRedstoneEvent event) {
+		if(SerialKeyAPI.hasPadlock(event.getBlock().getLocation())) {
+			event.setNewCurrent(0);
 		}
 	}
 	
