@@ -1,6 +1,7 @@
 package fr.skyost.serialkey;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -81,6 +82,7 @@ public class SerialKey extends JavaPlugin {
 	public final void onDisable() {
 		try {
 			data.save();
+			clearFields();
 		}
 		catch(final Exception ex) {
 			ex.printStackTrace();
@@ -165,6 +167,19 @@ public class SerialKey extends JavaPlugin {
 			map.put(keys[i], values[i]);
 		}
 		return map;
+	}
+	
+	/**
+	 * Used to avoid memory leaks.
+	 * 
+	 * @throws IllegalArgumentException Can never happen.
+	 * @throws IllegalAccessException Same here.
+	 */
+	
+	private final void clearFields() throws IllegalArgumentException, IllegalAccessException {
+		for(final Field field : this.getClass().getDeclaredFields()) {
+			field.set(null, null);
+		}
 	}
 	
 }

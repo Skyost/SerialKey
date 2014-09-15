@@ -82,7 +82,7 @@ public class BlocksListener implements Listener {
 		}
 	}
 	
-	@EventHandler(ignoreCancelled = true)
+	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
 	private final void onEntityExplode(final EntityExplodeEvent event) {
 		final List<Block> blocks = event.blockList();
 		for(final Block block : new ArrayList<Block>(blocks)) {

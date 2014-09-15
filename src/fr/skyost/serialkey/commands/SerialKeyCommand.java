@@ -40,7 +40,7 @@ public class SerialKeyCommand implements CommandExecutor {
 					break;
 				}
 			}
-			SerialKeyAPI.sendMessage(sender, ChatColor.RED + "You must be targeting to valid block.");
+			SerialKeyAPI.sendMessage(sender, ChatColor.RED + "You must be targeting to a valid block.");
 			break;
 		default:
 			return false;
