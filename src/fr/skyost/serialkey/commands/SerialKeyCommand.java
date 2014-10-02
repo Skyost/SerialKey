@@ -25,11 +25,12 @@ public class SerialKeyCommand implements CommandExecutor {
 		if(args.length < 1) {
 			return false;
 		}
+		args[0] = args[0].toLowerCase();
 		if(!sender.hasPermission("serialkey.command." + args[0])) {
 			SerialKeyAPI.sendMessage(sender, SerialKeyAPI.getMessages().messagePermission);
 			return true;
 		}
-		switch(args[0].toLowerCase()) {
+		switch(args[0]) {
 		case "getkey":
 			final Block block = Utils.getTargetBlock((Player)sender, 20);
 			if(block != null) {

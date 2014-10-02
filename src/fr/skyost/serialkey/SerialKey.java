@@ -1,10 +1,8 @@
 package fr.skyost.serialkey;
 
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -15,7 +13,6 @@ import org.bukkit.Material;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.json.simple.JSONObject;
@@ -49,17 +46,17 @@ public class SerialKey extends JavaPlugin {
 			data = new PluginData(dataFolder);
 			data.load();
 			handleLocations();
-			key = createItem(config.keyName, config.keyMaterial);
+			key = Utils.createItem(config.keyName, config.keyMaterial);
 			createRecipe(key, config.keyShape);
-			masterKey = createItem(config.masterKeyName, config.masterKeyMaterial);
+			masterKey = Utils.createItem(config.masterKeyName, config.masterKeyMaterial);
 			createRecipe(masterKey, config.masterKeyShape);
 			keyClone = key.clone();
 			keyClone.setAmount(2);
-			createRecipe(keyClone, Arrays.asList("YY"), createMap(new String[]{"Y"}, new String[]{config.keyMaterial.name()}));
-			bunchOfKeys = createItem(config.bunchOfKeysName, config.bunchOfKeysMaterial);
+			createRecipe(keyClone, Arrays.asList("YY"), Utils.createMap(new String[]{"Y"}, new String[]{config.keyMaterial.name()}));
+			bunchOfKeys = Utils.createItem(config.bunchOfKeysName, config.bunchOfKeysMaterial);
 			createRecipe(bunchOfKeys, config.bunchOfKeysShape);
-			padlockFinder = createItem(config.padlockFinderName, Material.COMPASS);
-			createRecipe(padlockFinder, Arrays.asList("ZY"), createMap(new String[]{"Z", "Y"}, new String[]{Material.COMPASS.name(), config.keyMaterial.name()}));
+			padlockFinder = Utils.createItem(config.padlockFinderName, Material.COMPASS);
+			createRecipe(padlockFinder, Arrays.asList("ZY"), Utils.createMap(new String[]{"Z", "Y"}, new String[]{Material.COMPASS.name(), config.keyMaterial.name()}));
 			final PluginManager manager = Bukkit.getPluginManager();
 			manager.registerEvents(new GlobalListener(), this);
 			manager.registerEvents(new BlocksListener(), this);
@@ -82,7 +79,7 @@ public class SerialKey extends JavaPlugin {
 	public final void onDisable() {
 		try {
 			data.save();
-			clearFields();
+			Utils.clearFields(this);
 		}
 		catch(final Exception ex) {
 			ex.printStackTrace();
@@ -99,23 +96,6 @@ public class SerialKey extends JavaPlugin {
 			data.padlocks.add(new Location(Bukkit.getWorld(json.get("world").toString()), Double.parseDouble(json.get("x").toString()), Double.parseDouble(json.get("y").toString()), Double.parseDouble(json.get("z").toString()), Float.parseFloat(json.get("yaw").toString()), Float.parseFloat(json.get("pitch").toString())));
 			data.padlocks.remove(object);
 		}
-	}
-	
-	/**
-	 * Creates an item with a custom name.
-	 * 
-	 * @param name The name.
-	 * @param material The item's material.
-	 * 
-	 * @return The item.
-	 */
-	
-	private final ItemStack createItem(final String name, final Material material) {
-		final ItemStack item = new ItemStack(material);
-		final ItemMeta meta = item.getItemMeta();
-		meta.setDisplayName(name);
-		item.setItemMeta(meta);
-		return item;
 	}
 	
 	/**
@@ -147,39 +127,6 @@ public class SerialKey extends JavaPlugin {
 			recipe.setIngredient(entry.getKey().charAt(0), Material.valueOf(entry.getValue()));
 		}
 		Bukkit.addRecipe(recipe);
-	}
-	
-	/**
-	 * Creates a map.
-	 * 
-	 * @param key The keys.
-	 * @param value The values.
-	 * 
-	 * @return The map.
-	 */
-	
-	private final <V, K> Map<K, V> createMap(final K[] keys, final V[] values) {
-		if(keys.length != values.length) {
-			return null;
-		}
-		final Map<K, V> map = new HashMap<K, V>();
-		for(int i = 0; i != keys.length; i++) {
-			map.put(keys[i], values[i]);
-		}
-		return map;
-	}
-	
-	/**
-	 * Used to avoid memory leaks.
-	 * 
-	 * @throws IllegalArgumentException Can never happen.
-	 * @throws IllegalAccessException Same here.
-	 */
-	
-	private final void clearFields() throws IllegalArgumentException, IllegalAccessException {
-		for(final Field field : this.getClass().getDeclaredFields()) {
-			field.set(null, null);
-		}
 	}
 	
 }

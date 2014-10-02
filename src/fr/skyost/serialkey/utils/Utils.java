@@ -1,12 +1,13 @@
 package fr.skyost.serialkey.utils;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -170,6 +171,59 @@ public class Utils {
 			}
 		}
 		return null;
+	}
+	
+	/**
+	 * Used to avoid memory leaks.
+	 * @param <T>
+	 * 
+	 * @param The class.
+	 * 
+	 * @throws IllegalArgumentException Can never happen.
+	 * @throws IllegalAccessException Same here.
+	 */
+	
+	public static final <T> void clearFields(final T instance) throws IllegalArgumentException, IllegalAccessException {
+		for(final Field field : instance.getClass().getDeclaredFields()) {
+			field.set(Modifier.isStatic(field.getModifiers()) ? null : instance, null);
+		}
+	}
+	
+	/**
+	 * Creates a map.
+	 * 
+	 * @param key The keys.
+	 * @param value The values.
+	 * 
+	 * @return The map.
+	 */
+	
+	public static final <V, K> Map<K, V> createMap(final K[] keys, final V[] values) {
+		if(keys.length != values.length) {
+			return null;
+		}
+		final Map<K, V> map = new HashMap<K, V>();
+		for(int i = 0; i != keys.length; i++) {
+			map.put(keys[i], values[i]);
+		}
+		return map;
+	}
+	
+	/**
+	 * Creates an item with a custom name.
+	 * 
+	 * @param name The name.
+	 * @param material The item's material.
+	 * 
+	 * @return The item.
+	 */
+	
+	public static final ItemStack createItem(final String name, final Material material) {
+		final ItemStack item = new ItemStack(material);
+		final ItemMeta meta = item.getItemMeta();
+		meta.setDisplayName(name);
+		item.setItemMeta(meta);
+		return item;
 	}
 
 }
