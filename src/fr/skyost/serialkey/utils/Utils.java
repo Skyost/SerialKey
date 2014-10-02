@@ -185,6 +185,7 @@ public class Utils {
 	
 	public static final <T> void clearFields(final T instance) throws IllegalArgumentException, IllegalAccessException {
 		for(final Field field : instance.getClass().getDeclaredFields()) {
+			field.setAccessible(true);
 			field.set(Modifier.isStatic(field.getModifiers()) ? null : instance, null);
 		}
 	}
