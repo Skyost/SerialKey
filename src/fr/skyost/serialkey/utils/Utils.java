@@ -175,7 +175,7 @@ public class Utils {
 	
 	/**
 	 * Used to avoid memory leaks.
-	 * @param <T>
+	 * @param <T> The instance's type.
 	 * 
 	 * @param The class.
 	 * 
