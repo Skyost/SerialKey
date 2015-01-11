@@ -62,6 +62,9 @@ public class SerialKey extends JavaPlugin {
 			manager.registerEvents(new BlocksListener(), this);
 			manager.registerEvents(new BunchOfKeysListener(), this);
 			manager.registerEvents(new PadlockFinderListener(), this);
+			if(config.disableHoppers) {
+				manager.registerEvents(new HopperListener(), this);
+			}
 			final SerialKeyCommand executor = new SerialKeyCommand();
 			final PluginCommand command = this.getCommand("serialkey");
 			command.setUsage(executor.getUsage());
