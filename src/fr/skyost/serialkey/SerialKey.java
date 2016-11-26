@@ -20,6 +20,7 @@ import org.json.simple.JSONValue;
 
 import fr.skyost.serialkey.commands.SerialKeyCommand;
 import fr.skyost.serialkey.listeners.*;
+import fr.skyost.serialkey.utils.Metrics;
 import fr.skyost.serialkey.utils.Skyupdater;
 import fr.skyost.serialkey.utils.Utils;
 
@@ -71,6 +72,9 @@ public class SerialKey extends JavaPlugin {
 			command.setExecutor(executor);
 			if(config.enableUpdater) {
 				new Skyupdater(this, 84423, this.getFile(), true, true);
+			}
+			if(config.enableMetrics) {
+				new Metrics(this);
 			}
 		}
 		catch(final Exception ex) {

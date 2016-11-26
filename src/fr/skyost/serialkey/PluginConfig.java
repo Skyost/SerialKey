@@ -20,6 +20,8 @@ public class PluginConfig extends Skyoconfig {
 	public boolean hideLore = false; // http://forums.bukkit.org/threads/storing-hidden-data-in-itemstacks-using-colors-persistent-no-nms.319970/.*/
 	@ConfigOptions(name = "options.enable-updater")
 	public boolean enableUpdater = true;
+	@ConfigOptions(name = "options.enable-metrics")
+	public boolean enableMetrics = true;
 	
 	@ConfigOptions(name = "key.material")
 	public Material keyMaterial = Material.TRIPWIRE_HOOK;

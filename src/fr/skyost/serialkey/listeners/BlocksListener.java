@@ -63,7 +63,7 @@ public class BlocksListener implements Listener {
 					else {
 						player.setItemInHand(new ItemStack(Material.AIR));
 					}
-					player.playSound(player.getLocation(), Sound.ITEM_BREAK, 1f, 1f);
+					player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 1f);
 				}
 			}
 			SerialKeyAPI.removePadlock(location);
