@@ -2,6 +2,7 @@ package fr.skyost.serialkey.listeners;
 
 import java.util.HashSet;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -96,7 +97,13 @@ public class GlobalListener implements Listener {
 			final ItemStack item = event.getCurrentItem();
 			if(SerialKeyAPI.isUsedPadlockFinder(item)) {
 				final HumanEntity player = event.getWhoClicked();
-				player.getWorld().dropItemNaturally(player.getEyeLocation(), SerialKeyAPI.getKey(SerialKeyAPI.extractLocation(item)));
+				try {
+					player.getWorld().dropItemNaturally(player.getEyeLocation(), SerialKeyAPI.getKey(SerialKeyAPI.extractLocation(item)));
+				}
+				catch(final Exception ex) {
+					ex.printStackTrace();
+					SerialKeyAPI.sendMessage(player, ChatColor.RED + ex.getClass().getName());
+				}
 			}
 		}
 	}
@@ -136,22 +143,34 @@ public class GlobalListener implements Listener {
 			}
 			final Location location = clicked.getLocation();
 			if(SerialKeyAPI.hasPadlock(location)) {
-				SerialKeyAPI.sendMessage(event.getPlayer(), SerialKeyAPI.getMessages().message3);
+				SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message3);
 				return;
 			}
-			SerialKeyAPI.createPadlock(location, item);
-			SerialKeyAPI.sendMessage(event.getPlayer(), SerialKeyAPI.getMessages().message1);
-			event.setCancelled(true);
+			try {
+				SerialKeyAPI.createPadlock(location, item);
+				SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message1);
+				event.setCancelled(true);
+			}
+			catch(final Exception ex) {
+				ex.printStackTrace();
+				SerialKeyAPI.sendMessage(player, ChatColor.RED + ex.getClass().getName());
+			}
 		}
 		else if(action == Action.RIGHT_CLICK_BLOCK) {
 			final Location location = clicked.getLocation();
 			if(!SerialKeyAPI.hasPadlock(location)) {
 				return;
 			}
-			if(!SerialKeyAPI.isValidKey(item, location)) {
-				SerialKeyAPI.sendMessage(event.getPlayer(), SerialKeyAPI.getMessages().message3);
-				event.setCancelled(true);
-				return;
+			try {
+				if(!SerialKeyAPI.isValidKey(item, location)) {
+					SerialKeyAPI.sendMessage(event.getPlayer(), SerialKeyAPI.getMessages().message3);
+					event.setCancelled(true);
+					return;
+				}
+			}
+			catch(final Exception ex) {
+				ex.printStackTrace();
+				SerialKeyAPI.sendMessage(event.getPlayer(), ChatColor.RED + ex.getClass().getName());
 			}
 		}
 	}

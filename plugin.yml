@@ -1,7 +1,7 @@
 name: SerialKey
 main: fr.skyost.serialkey.SerialKey
 author: Skyost
-version: 0.2.2
+version: 0.3
 website: https://www.skyost.eu
 commands:
   serialkey:

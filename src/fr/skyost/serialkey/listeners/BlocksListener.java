@@ -3,6 +3,7 @@ package fr.skyost.serialkey.listeners;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -38,41 +39,47 @@ public class BlocksListener implements Listener {
 		}
 		final Player player = event.getPlayer();
 		final ItemStack inHand = player.getItemInHand();
-		if(SerialKeyAPI.isValidKey(inHand, location)) {
-			if(!SerialKeyAPI.isMasterKey(inHand)) {
-				if(SerialKeyAPI.getConfig().reusableKeys) {
-					int amount = 0;
-					if(SerialKeyAPI.isUsedKey(inHand)) {
-						amount = inHand.getAmount();
-						player.setItemInHand(new ItemStack(Material.AIR));
-					}
-					else if(SerialKeyAPI.isBunchOfKeys(inHand)) {
-						amount = SerialKeyAPI.removeKey(inHand, SerialKeyAPI.getKey(location));
-					}
-					if(amount == 0) {
-						return;
-					}
-					final ItemStack key = SerialKeyAPI.getKeyItem();
-					key.setAmount(amount);
-					player.getWorld().dropItemNaturally(player.getEyeLocation(), SerialKeyAPI.getKeyItem());
-				}
-				else {
-					if(SerialKeyAPI.isBunchOfKeys(inHand)) {
-						SerialKeyAPI.removeKey(inHand, SerialKeyAPI.getKey(location));
+		try {
+			if(SerialKeyAPI.isValidKey(inHand, location)) {
+				if(!SerialKeyAPI.isMasterKey(inHand)) {
+					if(SerialKeyAPI.getConfig().reusableKeys) {
+						int amount = 0;
+						if(SerialKeyAPI.isUsedKey(inHand)) {
+							amount = inHand.getAmount();
+							player.setItemInHand(new ItemStack(Material.AIR));
+						}
+						else if(SerialKeyAPI.isBunchOfKeys(inHand)) {
+							amount = SerialKeyAPI.removeKey(inHand, SerialKeyAPI.getKey(location));
+						}
+						if(amount == 0) {
+							return;
+						}
+						final ItemStack key = SerialKeyAPI.getKeyItem();
+						key.setAmount(amount);
+						player.getWorld().dropItemNaturally(player.getEyeLocation(), SerialKeyAPI.getKeyItem());
 					}
 					else {
-						player.setItemInHand(new ItemStack(Material.AIR));
+						if(SerialKeyAPI.isBunchOfKeys(inHand)) {
+							SerialKeyAPI.removeKey(inHand, SerialKeyAPI.getKey(location));
+						}
+						else {
+							player.setItemInHand(new ItemStack(Material.AIR));
+						}
+						player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 1f);
 					}
-					player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 1f);
 				}
+				SerialKeyAPI.removePadlock(location);
+				SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message2);
 			}
-			SerialKeyAPI.removePadlock(location);
-			SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message2);
+			else {
+				SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message3);
+			}
+			event.setCancelled(true);
 		}
-		else {
-			SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message3);
+		catch(final Exception ex) {
+			ex.printStackTrace();
+			SerialKeyAPI.sendMessage(player, ChatColor.RED + ex.getClass().getName());
 		}
-		event.setCancelled(true);
 	}
 	
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)

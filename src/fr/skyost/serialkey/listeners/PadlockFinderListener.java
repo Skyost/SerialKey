@@ -1,5 +1,6 @@
 package fr.skyost.serialkey.listeners;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -22,8 +23,14 @@ public class PadlockFinderListener implements Listener {
 			if(SerialKeyAPI.isUsedPadlockFinder(item)) {
 				final Location spawn = player.getWorld().getSpawnLocation();
 				if(player.getCompassTarget().equals(spawn)) {
-					player.setCompassTarget(SerialKeyAPI.extractLocation(item));
-					player.sendMessage(SerialKeyAPI.getMessages().message4);
+					try {
+						player.setCompassTarget(SerialKeyAPI.extractLocation(item));
+						player.sendMessage(SerialKeyAPI.getMessages().message4);
+					}
+					catch(final Exception ex) {
+						ex.printStackTrace();
+						SerialKeyAPI.sendMessage(player, ChatColor.RED + ex.getClass().getName());
+					}
 				}
 				else {
 					player.setCompassTarget(spawn);

@@ -26,20 +26,23 @@ import fr.skyost.serialkey.utils.Utils;
 
 public class SerialKey extends JavaPlugin {
 	
-	protected static ItemStack key;
-	protected static ItemStack masterKey;
-	protected static ItemStack keyClone;
-	protected static ItemStack bunchOfKeys;
-	protected static ItemStack padlockFinder;
+	protected ItemStack key;
+	protected ItemStack masterKey;
+	protected ItemStack keyClone;
+	protected ItemStack bunchOfKeys;
+	protected ItemStack padlockFinder;
 	
-	protected static PluginConfig config;
-	protected static PluginMessages messages;
-	protected static PluginData data;
+	protected PluginConfig config;
+	protected PluginMessages messages;
+	protected PluginData data;
 	
 	@Override
 	public final void onEnable() {
 		try {
 			final File dataFolder = this.getDataFolder();
+			
+			/* CONFIGURATION : */
+			
 			config = new PluginConfig(dataFolder);
 			config.load();
 			messages = new PluginMessages(dataFolder);
@@ -47,6 +50,9 @@ public class SerialKey extends JavaPlugin {
 			data = new PluginData(dataFolder);
 			data.load();
 			handleLocations();
+			
+			/* ITEMS : */
+			
 			key = Utils.createItem(config.keyName, config.keyMaterial);
 			createRecipe(key, config.keyShape);
 			masterKey = Utils.createItem(config.masterKeyName, config.masterKeyMaterial);
@@ -58,6 +64,9 @@ public class SerialKey extends JavaPlugin {
 			createRecipe(bunchOfKeys, config.bunchOfKeysShape);
 			padlockFinder = Utils.createItem(config.padlockFinderName, Material.COMPASS);
 			createRecipe(padlockFinder, Arrays.asList("ZY"), Utils.createMap(new String[]{"Z", "Y"}, new String[]{Material.COMPASS.name(), config.keyMaterial.name()}));
+			
+			/* EVENTS : */
+			
 			final PluginManager manager = Bukkit.getPluginManager();
 			manager.registerEvents(new GlobalListener(), this);
 			manager.registerEvents(new BlocksListener(), this);
@@ -66,10 +75,16 @@ public class SerialKey extends JavaPlugin {
 			if(config.disableHoppers) {
 				manager.registerEvents(new HopperListener(), this);
 			}
+			
+			/* COMMAND : */
+			
 			final SerialKeyCommand executor = new SerialKeyCommand();
 			final PluginCommand command = this.getCommand("serialkey");
 			command.setUsage(executor.getUsage());
 			command.setExecutor(executor);
+			
+			/* SERVICES : */
+			
 			if(config.enableUpdater) {
 				new Skyupdater(this, 84423, this.getFile(), true, true);
 			}

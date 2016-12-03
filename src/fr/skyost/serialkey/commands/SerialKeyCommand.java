@@ -36,8 +36,14 @@ public class SerialKeyCommand implements CommandExecutor {
 			if(block != null) {
 				final Location location = block.getLocation();
 				if(SerialKeyAPI.hasPadlock(location)) {
-					final Player player = (Player)sender;
-					player.getWorld().dropItemNaturally(player.getEyeLocation(), SerialKeyAPI.getKey(location));
+					try {
+						final Player player = (Player)sender;
+						player.getWorld().dropItemNaturally(player.getEyeLocation(), SerialKeyAPI.getKey(location));
+					}
+					catch(final Exception ex) {
+						ex.printStackTrace();
+						SerialKeyAPI.sendMessage(sender, ChatColor.RED + ex.getClass().getName());
+					}
 					break;
 				}
 			}

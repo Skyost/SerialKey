@@ -1,5 +1,8 @@
 package fr.skyost.serialkey;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,9 +18,18 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import fr.skyost.serialkey.utils.CryptoUtils;
 import fr.skyost.serialkey.utils.Utils;
 
 public class SerialKeyAPI {
+	
+	private static final SerialKey PLUGIN = (SerialKey)Bukkit.getPluginManager().getPlugin("SerialKey");
+	
+	/**
+	 * The encryption key (will be used if specified in the configuration).
+	 */
+	
+	public static final String SERIAL_KEY_ENCRYPTION_KEY = "SerialKey";
 	
 	/**
 	 * Gets the SerialKey's instance.
@@ -26,7 +38,7 @@ public class SerialKeyAPI {
 	 */
 	
 	public static final SerialKey getPlugin() {
-		return (SerialKey)Bukkit.getPluginManager().getPlugin("SerialKey");
+		return PLUGIN;
 	}
 	
 	/**
@@ -36,7 +48,7 @@ public class SerialKeyAPI {
 	 */
 	
 	public static final PluginConfig getConfig() {
-		return SerialKey.config;
+		return PLUGIN.config;
 	}
 	
 	/**
@@ -46,7 +58,7 @@ public class SerialKeyAPI {
 	 */
 	
 	public static final PluginMessages getMessages() {
-		return SerialKey.messages;
+		return PLUGIN.messages;
 	}
 	
 	/**
@@ -56,7 +68,7 @@ public class SerialKeyAPI {
 	 */
 	
 	public static final ItemStack getKeyItem() {
-		return SerialKey.key.clone();
+		return PLUGIN.key.clone();
 	}
 	
 	/**
@@ -66,7 +78,7 @@ public class SerialKeyAPI {
 	 */
 	
 	public static final ItemStack getMasterKeyItem() {
-		return SerialKey.masterKey.clone();
+		return PLUGIN.masterKey.clone();
 	}
 	
 	/**
@@ -76,7 +88,7 @@ public class SerialKeyAPI {
 	 */
 	
 	public static final ItemStack getKeyCloneItem() {
-		return SerialKey.keyClone.clone();
+		return PLUGIN.keyClone.clone();
 	}
 	
 	/**
@@ -86,41 +98,47 @@ public class SerialKeyAPI {
 	 */
 	
 	public static final ItemStack getPadlockFinderItem() {
-		return SerialKey.padlockFinder.clone();
+		return PLUGIN.padlockFinder.clone();
 	}
 	
 	/**
 	 * Sends a message with the plugin's prefix.
 	 * 
-	 * @param sender Who receive the message.
+	 * @param sender Who receives the message.
 	 * @param message The message.
 	 */
 	
 	public static final void sendMessage(final CommandSender sender, final String message) {
-		sender.sendMessage(SerialKey.messages.prefix + " " + message);
+		sender.sendMessage(PLUGIN.messages.prefix + " " + message);
 	}
 	
 	/**
 	 * Creates a padlock for the selected location.
 	 * 
 	 * @param location The location.
+	 * 
+	 * @throws UnsupportedEncodingException If an exception occurs while encrypting the lore.
+	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final void createPadlock(final Location location) {
+	public static final void createPadlock(final Location location) throws UnsupportedEncodingException, GeneralSecurityException {
 		createPadlock(location, null);
 	}
 	
 	/**
 	 * Creates a padlock for the selected location.
-	 * <br />It will format a key too.
+	 * <br>It will format a key too.
 	 * 
 	 * @param location The location (can be corrected if needed).
 	 * @param key The key.
+	 * 
+	 * @throws UnsupportedEncodingException If an exception occurs while encrypting the lore.
+	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final void createPadlock(final Location location, final ItemStack key) {
+	public static final void createPadlock(final Location location, final ItemStack key) throws UnsupportedEncodingException, GeneralSecurityException {
 		Utils.correctLocation(location);
-		SerialKey.data.padlocks.add(location);
+		PLUGIN.data.padlocks.add(location);
 		if(isBlankKey(key)) {
 			formatItem(location, key);
 		}
@@ -129,7 +147,7 @@ public class SerialKeyAPI {
 	/**
 	 * Removes a padlock.
 	 * 
-	 * @param location
+	 * @param location The location (can be corrected if needed).
 	 */
 	
 	public static final void removePadlock(final Location location) {
@@ -138,7 +156,7 @@ public class SerialKeyAPI {
 	
 	/**
 	 * Removes a padlock.
-	 * <br />It will format a key too.
+	 * <br>It will format a key too.
 	 * 
 	 * @param location The location (can be corrected if needed).
 	 * @param key The key.
@@ -146,7 +164,7 @@ public class SerialKeyAPI {
 	
 	public static final void removePadlock(final Location location, final ItemStack key) {
 		Utils.correctLocation(location);
-		SerialKey.data.padlocks.remove(location);
+		PLUGIN.data.padlocks.remove(location);
 		if(isUsedKey(key)) {
 			final ItemMeta meta = key.getItemMeta();
 			meta.setLore(null);
@@ -160,7 +178,7 @@ public class SerialKeyAPI {
 	 * @param location The location (can be corrected if needed).
 	 * 
 	 * @return <b>true</b> : yes.
-	 * <br /><b>false</b> : no.
+	 * <br><b>false</b> : no.
 	 */
 	
 	public static final boolean hasPadlock(final Location location) {
@@ -174,14 +192,14 @@ public class SerialKeyAPI {
 	 * @param correctLocation If you want to automatically correct the location.
 	 * 
 	 * @return <b>true</b> : yes.
-	 * <br /><b>false</b> : no.
+	 * <br><b>false</b> : no.
 	 */
 	
 	public static final boolean hasPadlock(final Location location, final boolean correctLocation) {
 		if(correctLocation) {
 			Utils.correctLocation(location);
 		}
-		return SerialKey.data.padlocks.contains(location);
+		return PLUGIN.data.padlocks.contains(location);
 	}
 	
 	/**
@@ -190,11 +208,11 @@ public class SerialKeyAPI {
 	 * @param item The item.
 	 * 
 	 * @return <b>true :</b> yes.
-	 * <br /><b>false :</b> no.
+	 * <br><b>false :</b> no.
 	 */
 	
 	public static final boolean isKey(final ItemStack item) {
-		return Utils.isValidItem(item) && item.getType() == SerialKey.config.keyMaterial && item.getItemMeta().getDisplayName().equals(SerialKey.config.keyName);
+		return Utils.isValidItem(item) && item.getType() == PLUGIN.config.keyMaterial && item.getItemMeta().getDisplayName().equals(PLUGIN.config.keyName);
 	}
 	
 	/**
@@ -203,7 +221,7 @@ public class SerialKeyAPI {
 	 * @param item The item.
 	 * 
 	 * @return <b>true :</b> yes.
-	 * <br /><b>false :</b> no.
+	 * <br><b>false :</b> no.
 	 */
 	
 	public static final boolean isBlankKey(final ItemStack item) {
@@ -216,7 +234,7 @@ public class SerialKeyAPI {
 	 * @param item The item.
 	 * 
 	 * @return <b>true :</b> yes.
-	 * <br /><b>false :</b> no.
+	 * <br><b>false :</b> no.
 	 */
 	
 	public static final boolean isUsedKey(final ItemStack item) {
@@ -233,11 +251,11 @@ public class SerialKeyAPI {
 	 * @param item The item.
 	 * 
 	 * @return <b>true :</b> yes.
-	 * <br /><b>false :</b> no.
+	 * <br><b>false :</b> no.
 	 */
 	
 	public static final boolean isMasterKey(final ItemStack item) {
-		return Utils.isValidItem(item) && item.getType() == SerialKey.config.masterKeyMaterial && item.getItemMeta().getDisplayName().equals(SerialKey.config.masterKeyName);
+		return Utils.isValidItem(item) && item.getType() == PLUGIN.config.masterKeyMaterial && item.getItemMeta().getDisplayName().equals(PLUGIN.config.masterKeyName);
 	}
 	
 	/**
@@ -246,11 +264,11 @@ public class SerialKeyAPI {
 	 * @param item The item.
 	 * 
 	 * @return <b>true :</b> yes.
-	 * <br /><b>false :</b> no.
+	 * <br><b>false :</b> no.
 	 */
 	
 	public static final boolean isBunchOfKeys(final ItemStack item) {
-		return Utils.isValidItem(item) && item.getType() == SerialKey.config.bunchOfKeysMaterial && item.getItemMeta().getDisplayName().equals(SerialKey.config.bunchOfKeysName);
+		return Utils.isValidItem(item) && item.getType() == PLUGIN.config.bunchOfKeysMaterial && item.getItemMeta().getDisplayName().equals(PLUGIN.config.bunchOfKeysName);
 	}
 	
 	/**
@@ -259,11 +277,11 @@ public class SerialKeyAPI {
 	 * @param item The item.
 	 * 
 	 * @return <b>true :</b> yes.
-	 * <br /><b>false :</b> no.
+	 * <br><b>false :</b> no.
 	 */
 	
 	public static final boolean isBunchOfKeys(final Inventory inventory) {
-		return inventory.getName().equals(SerialKey.config.bunchOfKeysName) && inventory.getSize() == 9;
+		return inventory.getName().equals(PLUGIN.config.bunchOfKeysName) && inventory.getSize() == 9;
 	}
 	
 	/**
@@ -272,7 +290,7 @@ public class SerialKeyAPI {
 	 * @param item The item.
 	 * 
 	 * @return <b>true :</b> yes.
-	 * <br /><b>false :</b> no.
+	 * <br><b>false :</b> no.
 	 */
 	
 	public static final boolean isBlankBunchOfKeys(final ItemStack item) {
@@ -285,7 +303,7 @@ public class SerialKeyAPI {
 	 * @param item The item.
 	 * 
 	 * @return <b>true :</b> yes.
-	 * <br /><b>false :</b> no.
+	 * <br><b>false :</b> no.
 	 */
 	
 	public static final boolean isUsedBunchOfKeys(final ItemStack item) {
@@ -298,11 +316,11 @@ public class SerialKeyAPI {
 	 * @param item The item.
 	 * 
 	 * @return <b>true :</b> yes.
-	 * <br /><b>false :</b> no.
+	 * <br><b>false :</b> no.
 	 */
 	
 	public static final boolean isPadlockFinder(final ItemStack item) {
-		return Utils.isValidItem(item) && item.getType() == Material.COMPASS && item.getItemMeta().getDisplayName().equals(SerialKey.config.padlockFinderName);
+		return Utils.isValidItem(item) && item.getType() == Material.COMPASS && item.getItemMeta().getDisplayName().equals(PLUGIN.config.padlockFinderName);
 	}
 	
 	/**
@@ -311,7 +329,7 @@ public class SerialKeyAPI {
 	 * @param item The item.
 	 * 
 	 * @return <b>true :</b> yes.
-	 * <br /><b>false :</b> no.
+	 * <br><b>false :</b> no.
 	 */
 	
 	public static final boolean isBlankPadlockFinder(final ItemStack item) {
@@ -324,7 +342,7 @@ public class SerialKeyAPI {
 	 * @param item The item.
 	 * 
 	 * @return <b>true :</b> yes.
-	 * <br /><b>false :</b> no.
+	 * <br><b>false :</b> no.
 	 */
 	
 	public static final boolean isUsedPadlockFinder(final ItemStack item) {
@@ -338,10 +356,13 @@ public class SerialKeyAPI {
 	 * @param location The location (will not be corrected).
 	 * 
 	 * @return <b>true</b> : yes.
-	 * <br /><b>false</b> : no.
+	 * <br><b>false</b> : no.
+	 * 
+	 * @throws IOException If an exception occurs while decrypting the lore.
+	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final boolean isValidKey(final ItemStack key, final Location location) {
+	public static final boolean isValidKey(final ItemStack key, final Location location) throws GeneralSecurityException, IOException {
 		return isValidKey(key, location, null);
 	}
 	
@@ -350,16 +371,19 @@ public class SerialKeyAPI {
 	 * 
 	 * @param key The key.
 	 * @param location The location (can be corrected if needed).
-	 * @param player If you want to check if the player has the right permission. Will send a message elsewhere.
+	 * @param player If you want to check if the player has the right permission. Will send a message otherwise.
 	 * 
 	 * @return <b>true</b> : yes.
-	 * <br /><b>false</b> : no.
+	 * <br><b>false</b> : no.
+	 * 
+	 * @throws IOException If an exception occurs while decrypting the lore.
+	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final boolean isValidKey(final ItemStack key, final Location location, final Player player) {
+	public static final boolean isValidKey(final ItemStack key, final Location location, final Player player) throws GeneralSecurityException, IOException {
 		if(isMasterKey(key)) {
 			if(player != null && !player.hasPermission("serialkey.use.masterkey")) {
-				sendMessage(player, SerialKey.messages.messagePermission);
+				sendMessage(player, PLUGIN.messages.messagePermission);
 			}
 			return true;
 		}
@@ -367,14 +391,14 @@ public class SerialKeyAPI {
 		final Location keyLocation = extractLocation(key);
 		if(keyLocation != null && keyLocation.equals(location)) {
 			if(player != null && !player.hasPermission("serialkey.use.key")) {
-				sendMessage(player, SerialKey.messages.messagePermission);
+				sendMessage(player, PLUGIN.messages.messagePermission);
 			}
 			return true;
 		}
 		final ItemStack[] extractedKeys = extractKeys(key);
 		if(extractedKeys != null) {
 			if(player != null && !player.hasPermission("serialkey.use.bunchofkeys")) {
-				sendMessage(player, SerialKey.messages.messagePermission);
+				sendMessage(player, PLUGIN.messages.messagePermission);
 				return true;
 			}
 			for(final ItemStack extractedKey : extractedKeys) {
@@ -392,19 +416,22 @@ public class SerialKeyAPI {
 	 * @param item The item.
 	 * 
 	 * @return The location.
+	 * 
+	 * @throws IOException If an exception occurs while decrypting the lore.
+	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final Location extractLocation(final ItemStack item) {
+	public static final Location extractLocation(final ItemStack item) throws GeneralSecurityException, IOException {
 		boolean isKey = isUsedKey(item);
 		if(!isKey && !isUsedPadlockFinder(item)) {
 			return null;
 		}
 		final List<String> lore = item.getItemMeta().getLore();
-		final World world = Bukkit.getWorld(ChatColor.stripColor(lore.get(0)));
+		final World world = Bukkit.getWorld(PLUGIN.config.encryptLore ? CryptoUtils.decrypt(ChatColor.stripColor(lore.get(0)), SERIAL_KEY_ENCRYPTION_KEY) : ChatColor.stripColor(lore.get(0)));
 		if(world == null) {
 			return null;
 		}
-		final String[] rawLocation = ChatColor.stripColor(lore.get(1)).split(", ");
+		final String[] rawLocation = (PLUGIN.config.encryptLore ? CryptoUtils.decrypt(ChatColor.stripColor(lore.get(1)), SERIAL_KEY_ENCRYPTION_KEY) : ChatColor.stripColor(lore.get(1))).split(", ");
 		if(rawLocation.length != 3) {
 			return null;
 		}
@@ -421,9 +448,12 @@ public class SerialKeyAPI {
 	 * @param location The location (will not be corrected).
 	 * 
 	 * @return The key.
+	 * 
+	 * @throws UnsupportedEncodingException If an exception occurs while encrypting the lore.
+	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final ItemStack getKey(final Location location) {
+	public static final ItemStack getKey(final Location location) throws UnsupportedEncodingException, GeneralSecurityException {
 		final ItemStack key = getKeyItem();
 		formatItem(location, key);
 		return key;
@@ -435,9 +465,12 @@ public class SerialKeyAPI {
 	 * @param location The location (will not be corrected).
 	 * 
 	 * @return The padlock finder.
+	 * 
+	 * @throws UnsupportedEncodingException If an exception occurs while encrypting the lore.
+	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final ItemStack getPadlockFinder(final Location location) {
+	public static final ItemStack getPadlockFinder(final Location location) throws UnsupportedEncodingException, GeneralSecurityException {
 		final ItemStack padlockFinder = getPadlockFinderItem();
 		formatItem(location, padlockFinder);
 		return padlockFinder;
@@ -448,15 +481,23 @@ public class SerialKeyAPI {
 	 * 
 	 * @param location The location (will not be corrected).
 	 * @param item The key.
+	 * 
+	 * @throws UnsupportedEncodingException If an exception occurs while encrypting the lore.
+	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final void formatItem(final Location location, final ItemStack item) {
+	public static final void formatItem(final Location location, final ItemStack item) throws UnsupportedEncodingException, GeneralSecurityException {
 		if(!isKey(item) && !isPadlockFinder(item)) {
 			return;
 		}
 		final ChatColor color = Utils.randomChatColor(ChatColor.BOLD, ChatColor.ITALIC, ChatColor.UNDERLINE, ChatColor.STRIKETHROUGH, ChatColor.MAGIC);
 		final ItemMeta meta = item.getItemMeta();
-		meta.setLore(Arrays.asList(color + location.getWorld().getName(), color + String.valueOf(location.getBlockX()) + ", " + location.getBlockY() + ", " + location.getBlockZ()));
+		if(PLUGIN.config.encryptLore) {
+			meta.setLore(Arrays.asList(color + CryptoUtils.encrypt(SERIAL_KEY_ENCRYPTION_KEY, location.getWorld().getName()), CryptoUtils.encrypt(SERIAL_KEY_ENCRYPTION_KEY, color + String.valueOf(location.getBlockX()) + ", " + location.getBlockY() + ", " + location.getBlockZ())));
+		}
+		else {
+			meta.setLore(Arrays.asList(color + location.getWorld().getName(), color + String.valueOf(location.getBlockX()) + ", " + location.getBlockY() + ", " + location.getBlockZ()));
+		}
 		item.setItemMeta(meta);
 	}
 	
@@ -512,7 +553,7 @@ public class SerialKeyAPI {
 	}
 	
 	/**
-	 * Clear a bunch of keys.
+	 * Clears a bunch of keys.
 	 * 
 	 * @param bunchOfKeys The bunch of keys.
 	 */
@@ -550,11 +591,26 @@ public class SerialKeyAPI {
 		return keys.toArray(new ItemStack[keys.size()]);
 	}
 	
-	
+	/**
+	 * Creates an inventory for the specified bunch of keys.
+	 * 
+	 * @param bunchOfKeys The bunch of keys item.
+	 * 
+	 * @return The inventory.
+	 */
 	
 	public static final Inventory createInventory(final ItemStack bunchOfKeys) {
 		return createInventory(bunchOfKeys, new Player[]{});
 	}
+	
+	/**
+	 * Creates an inventory for the specified bunch of keys and open it for the specified players.
+	 * 
+	 * @param bunchOfKeys The bunch of keys item.
+	 * @param players The players.
+	 * 
+	 * @return The inventory.
+	 */
 	
 	public static final Inventory createInventory(final ItemStack bunchOfKeys, final Player... players) {
 		if(!isBunchOfKeys(bunchOfKeys)) {

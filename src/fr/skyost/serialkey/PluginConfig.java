@@ -16,6 +16,8 @@ public class PluginConfig extends Skyoconfig {
 	public boolean reusableKeys = true;
 	@ConfigOptions(name = "options.disable-hoppers")
 	public boolean disableHoppers = true;
+	@ConfigOptions(name = "options.encrypt-lore")
+	public boolean encryptLore = false;
 	/*@ConfigOptions(name = "options.hide-lore")
 	public boolean hideLore = false; // http://forums.bukkit.org/threads/storing-hidden-data-in-itemstacks-using-colors-persistent-no-nms.319970/.*/
 	@ConfigOptions(name = "options.enable-updater")
