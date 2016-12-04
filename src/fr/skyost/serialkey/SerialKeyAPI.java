@@ -212,7 +212,7 @@ public class SerialKeyAPI {
 	 */
 	
 	public static final boolean isKey(final ItemStack item) {
-		return Utils.isValidItem(item) && item.getType() == PLUGIN.config.keyMaterial && item.getItemMeta().getDisplayName().equals(PLUGIN.config.keyName);
+		return Utils.isValidItem(item) && item.getType() == PLUGIN.config.keyMaterial && (PLUGIN.config.canRenameItems ? true : item.getItemMeta().getDisplayName().equals(PLUGIN.config.keyName));
 	}
 	
 	/**
@@ -255,7 +255,7 @@ public class SerialKeyAPI {
 	 */
 	
 	public static final boolean isMasterKey(final ItemStack item) {
-		return Utils.isValidItem(item) && item.getType() == PLUGIN.config.masterKeyMaterial && item.getItemMeta().getDisplayName().equals(PLUGIN.config.masterKeyName);
+		return Utils.isValidItem(item) && item.getType() == PLUGIN.config.masterKeyMaterial && (PLUGIN.config.canRenameItems ? true : item.getItemMeta().getDisplayName().equals(PLUGIN.config.masterKeyName));
 	}
 	
 	/**
@@ -268,7 +268,7 @@ public class SerialKeyAPI {
 	 */
 	
 	public static final boolean isBunchOfKeys(final ItemStack item) {
-		return Utils.isValidItem(item) && item.getType() == PLUGIN.config.bunchOfKeysMaterial && item.getItemMeta().getDisplayName().equals(PLUGIN.config.bunchOfKeysName);
+		return Utils.isValidItem(item) && item.getType() == PLUGIN.config.bunchOfKeysMaterial && (PLUGIN.config.canRenameItems ? true : item.getItemMeta().getDisplayName().equals(PLUGIN.config.bunchOfKeysName));
 	}
 	
 	/**
