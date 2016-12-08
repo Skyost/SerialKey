@@ -56,6 +56,7 @@ public class PluginConfig extends Skyoconfig {
 	
 	protected PluginConfig(final File dataFolder) {
 		super(new File(dataFolder, "config.yml"), Arrays.asList("SerialKey configuration"));
+		
 		shapeMaterials.put("A", Material.IRON_INGOT.name());
 		shapeMaterials.put("B", Material.LEVER.name());
 		shapeMaterials.put("C", Material.COMMAND.name());

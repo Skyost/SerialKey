@@ -13,8 +13,11 @@ import fr.skyost.serialkey.SerialKeyAPI;
 
 public class PadlockFinderListener implements Listener {
 	
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.LOWEST)
 	private final void onPlayerInteract(final PlayerInteractEvent event) {
+		if(event.isCancelled()) {
+			return;
+		}
 		switch(event.getAction()) {
 		case RIGHT_CLICK_BLOCK:
 		case RIGHT_CLICK_AIR:

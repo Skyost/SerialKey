@@ -13,8 +13,12 @@ import fr.skyost.serialkey.SerialKeyAPI;
 
 public class HopperListener implements Listener {
 	
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.LOWEST)
 	private final void onBlockPlace(final BlockPlaceEvent event) {
+		if(event.isCancelled()) {
+			return;
+		}
+		
 		if(event.getItemInHand().getType() != Material.HOPPER) {
 			return;
 		}

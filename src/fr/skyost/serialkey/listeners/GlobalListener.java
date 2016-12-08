@@ -33,7 +33,7 @@ public class GlobalListener implements Listener {
 	
 	private final HashSet<CraftingInventory> padlockFinders = new HashSet<CraftingInventory>();
 	
-	@EventHandler(ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.HIGHEST)
 	private final void onPrepareItemCraft(final PrepareItemCraftEvent event) {
 		final CraftingInventory craftingTable = event.getInventory();
 		final ItemStack result = craftingTable.getResult();
@@ -92,6 +92,10 @@ public class GlobalListener implements Listener {
 	
 	@EventHandler
 	private final void onInventoryClick(final InventoryClickEvent event) {
+		if(event.isCancelled()) {
+			return;
+		}
+		
 		final Inventory inventory = event.getInventory();
 		if(padlockFinders.contains(inventory)) {
 			final ItemStack item = event.getCurrentItem();
@@ -116,8 +120,12 @@ public class GlobalListener implements Listener {
 		}
 	}
 	
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.LOWEST)
 	private final void onPlayerInteract(final PlayerInteractEvent event) {
+		if(event.isCancelled()) {
+			return;
+		}
+		
 		final Block clicked = event.getClickedBlock();
 		if(clicked == null) {
 			return;
@@ -146,31 +154,19 @@ public class GlobalListener implements Listener {
 				SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message3);
 				return;
 			}
-			try {
-				SerialKeyAPI.createPadlock(location, item);
-				SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message1);
-				event.setCancelled(true);
-			}
-			catch(final Exception ex) {
-				ex.printStackTrace();
-				SerialKeyAPI.sendMessage(player, ChatColor.RED + ex.getClass().getName());
-			}
+			SerialKeyAPI.createPadlock(location, item);
+			SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message1);
+			event.setCancelled(true);
 		}
 		else if(action == Action.RIGHT_CLICK_BLOCK) {
 			final Location location = clicked.getLocation();
 			if(!SerialKeyAPI.hasPadlock(location)) {
 				return;
 			}
-			try {
-				if(!SerialKeyAPI.isValidKey(item, location)) {
-					SerialKeyAPI.sendMessage(event.getPlayer(), SerialKeyAPI.getMessages().message3);
-					event.setCancelled(true);
-					return;
-				}
-			}
-			catch(final Exception ex) {
-				ex.printStackTrace();
-				SerialKeyAPI.sendMessage(event.getPlayer(), ChatColor.RED + ex.getClass().getName());
+			if(!SerialKeyAPI.isValidKey(item, location)) {
+				SerialKeyAPI.sendMessage(event.getPlayer(), SerialKeyAPI.getMessages().message3);
+				event.setCancelled(true);
+				return;
 			}
 		}
 	}

@@ -1,8 +1,5 @@
 package fr.skyost.serialkey;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,18 +15,12 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import fr.skyost.serialkey.utils.CryptoUtils;
+import fr.skyost.serialkey.utils.ROT47;
 import fr.skyost.serialkey.utils.Utils;
 
 public class SerialKeyAPI {
 	
 	private static final SerialKey PLUGIN = (SerialKey)Bukkit.getPluginManager().getPlugin("SerialKey");
-	
-	/**
-	 * The encryption key (will be used if specified in the configuration).
-	 */
-	
-	public static final String SERIAL_KEY_ENCRYPTION_KEY = "SerialKey";
 	
 	/**
 	 * Gets the SerialKey's instance.
@@ -116,12 +107,9 @@ public class SerialKeyAPI {
 	 * Creates a padlock for the selected location.
 	 * 
 	 * @param location The location.
-	 * 
-	 * @throws UnsupportedEncodingException If an exception occurs while encrypting the lore.
-	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final void createPadlock(final Location location) throws UnsupportedEncodingException, GeneralSecurityException {
+	public static final void createPadlock(final Location location) {
 		createPadlock(location, null);
 	}
 	
@@ -136,7 +124,7 @@ public class SerialKeyAPI {
 	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final void createPadlock(final Location location, final ItemStack key) throws UnsupportedEncodingException, GeneralSecurityException {
+	public static final void createPadlock(final Location location, final ItemStack key) {
 		Utils.correctLocation(location);
 		PLUGIN.data.padlocks.add(location);
 		if(isBlankKey(key)) {
@@ -357,12 +345,9 @@ public class SerialKeyAPI {
 	 * 
 	 * @return <b>true</b> : yes.
 	 * <br><b>false</b> : no.
-	 * 
-	 * @throws IOException If an exception occurs while decrypting the lore.
-	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final boolean isValidKey(final ItemStack key, final Location location) throws GeneralSecurityException, IOException {
+	public static final boolean isValidKey(final ItemStack key, final Location location) {
 		return isValidKey(key, location, null);
 	}
 	
@@ -375,12 +360,9 @@ public class SerialKeyAPI {
 	 * 
 	 * @return <b>true</b> : yes.
 	 * <br><b>false</b> : no.
-	 * 
-	 * @throws IOException If an exception occurs while decrypting the lore.
-	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final boolean isValidKey(final ItemStack key, final Location location, final Player player) throws GeneralSecurityException, IOException {
+	public static final boolean isValidKey(final ItemStack key, final Location location, final Player player) {
 		if(isMasterKey(key)) {
 			if(player != null && !player.hasPermission("serialkey.use.masterkey")) {
 				sendMessage(player, PLUGIN.messages.messagePermission);
@@ -388,24 +370,29 @@ public class SerialKeyAPI {
 			return true;
 		}
 		Utils.correctLocation(location);
-		final Location keyLocation = extractLocation(key);
-		if(keyLocation != null && keyLocation.equals(location)) {
-			if(player != null && !player.hasPermission("serialkey.use.key")) {
-				sendMessage(player, PLUGIN.messages.messagePermission);
-			}
-			return true;
-		}
-		final ItemStack[] extractedKeys = extractKeys(key);
-		if(extractedKeys != null) {
-			if(player != null && !player.hasPermission("serialkey.use.bunchofkeys")) {
-				sendMessage(player, PLUGIN.messages.messagePermission);
+		try {
+			final Location keyLocation = extractLocation(key);
+			if(keyLocation != null && keyLocation.equals(location)) {
+				if(player != null && !player.hasPermission("serialkey.use.key")) {
+					sendMessage(player, PLUGIN.messages.messagePermission);
+				}
 				return true;
 			}
-			for(final ItemStack extractedKey : extractedKeys) {
-				if(isValidKey(extractedKey, location, null)) {
+			final ItemStack[] extractedKeys = extractKeys(key);
+			if(extractedKeys != null) {
+				if(player != null && !player.hasPermission("serialkey.use.bunchofkeys")) {
+					sendMessage(player, PLUGIN.messages.messagePermission);
 					return true;
 				}
+				for(final ItemStack extractedKey : extractedKeys) {
+					if(isValidKey(extractedKey, location, null)) {
+						return true;
+					}
+				}
 			}
+		}
+		catch(final Exception ex) {
+			ex.printStackTrace();
 		}
 		return false;
 	}
@@ -416,22 +403,30 @@ public class SerialKeyAPI {
 	 * @param item The item.
 	 * 
 	 * @return The location.
-	 * 
-	 * @throws IOException If an exception occurs while decrypting the lore.
-	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final Location extractLocation(final ItemStack item) throws GeneralSecurityException, IOException {
+	public static final Location extractLocation(final ItemStack item) {
 		boolean isKey = isUsedKey(item);
 		if(!isKey && !isUsedPadlockFinder(item)) {
 			return null;
 		}
 		final List<String> lore = item.getItemMeta().getLore();
-		final World world = Bukkit.getWorld(PLUGIN.config.encryptLore ? CryptoUtils.decrypt(ChatColor.stripColor(lore.get(0)), SERIAL_KEY_ENCRYPTION_KEY) : ChatColor.stripColor(lore.get(0)));
+		String loreWorld = ChatColor.stripColor(lore.get(0));
+		String loreLocation = ChatColor.stripColor(lore.get(1));
+		if(PLUGIN.config.encryptLore) {
+			try {
+				loreWorld = ROT47.rotate(loreWorld);
+				loreLocation = ROT47.rotate(loreLocation);
+			}
+			catch(final Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+		final World world = Bukkit.getWorld(loreWorld);
 		if(world == null) {
 			return null;
 		}
-		final String[] rawLocation = (PLUGIN.config.encryptLore ? CryptoUtils.decrypt(ChatColor.stripColor(lore.get(1)), SERIAL_KEY_ENCRYPTION_KEY) : ChatColor.stripColor(lore.get(1))).split(", ");
+		final String[] rawLocation = loreLocation.split(", ");
 		if(rawLocation.length != 3) {
 			return null;
 		}
@@ -448,12 +443,9 @@ public class SerialKeyAPI {
 	 * @param location The location (will not be corrected).
 	 * 
 	 * @return The key.
-	 * 
-	 * @throws UnsupportedEncodingException If an exception occurs while encrypting the lore.
-	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final ItemStack getKey(final Location location) throws UnsupportedEncodingException, GeneralSecurityException {
+	public static final ItemStack getKey(final Location location) {
 		final ItemStack key = getKeyItem();
 		formatItem(location, key);
 		return key;
@@ -465,12 +457,9 @@ public class SerialKeyAPI {
 	 * @param location The location (will not be corrected).
 	 * 
 	 * @return The padlock finder.
-	 * 
-	 * @throws UnsupportedEncodingException If an exception occurs while encrypting the lore.
-	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final ItemStack getPadlockFinder(final Location location) throws UnsupportedEncodingException, GeneralSecurityException {
+	public static final ItemStack getPadlockFinder(final Location location) {
 		final ItemStack padlockFinder = getPadlockFinderItem();
 		formatItem(location, padlockFinder);
 		return padlockFinder;
@@ -481,23 +470,26 @@ public class SerialKeyAPI {
 	 * 
 	 * @param location The location (will not be corrected).
 	 * @param item The key.
-	 * 
-	 * @throws UnsupportedEncodingException If an exception occurs while encrypting the lore.
-	 * @throws GeneralSecurityException Same here.
 	 */
 	
-	public static final void formatItem(final Location location, final ItemStack item) throws UnsupportedEncodingException, GeneralSecurityException {
+	public static final void formatItem(final Location location, final ItemStack item) {
 		if(!isKey(item) && !isPadlockFinder(item)) {
 			return;
 		}
 		final ChatColor color = Utils.randomChatColor(ChatColor.BOLD, ChatColor.ITALIC, ChatColor.UNDERLINE, ChatColor.STRIKETHROUGH, ChatColor.MAGIC);
 		final ItemMeta meta = item.getItemMeta();
+		String loreWorld = location.getWorld().getName();
+		String loreLocation = location.getBlockX() + ", " + location.getBlockY() + ", " + location.getBlockZ();
 		if(PLUGIN.config.encryptLore) {
-			meta.setLore(Arrays.asList(color + CryptoUtils.encrypt(SERIAL_KEY_ENCRYPTION_KEY, location.getWorld().getName()), CryptoUtils.encrypt(SERIAL_KEY_ENCRYPTION_KEY, color + String.valueOf(location.getBlockX()) + ", " + location.getBlockY() + ", " + location.getBlockZ())));
+			try {
+				loreWorld = ROT47.rotate(loreWorld);
+				loreLocation = ROT47.rotate(loreLocation);
+			}
+			catch(final Exception ex) {
+				ex.printStackTrace();
+			}
 		}
-		else {
-			meta.setLore(Arrays.asList(color + location.getWorld().getName(), color + String.valueOf(location.getBlockX()) + ", " + location.getBlockY() + ", " + location.getBlockZ()));
-		}
+		meta.setLore(Arrays.asList(color + loreWorld, color + loreLocation));
 		item.setItemMeta(meta);
 	}
 	
