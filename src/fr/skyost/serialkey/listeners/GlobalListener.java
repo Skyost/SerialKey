@@ -144,6 +144,7 @@ public class GlobalListener implements Listener {
 			if(!isBlankKey && !SerialKeyAPI.isMasterKey(item)) {
 				return;
 			}
+			event.setCancelled(true);
 			final Player player = event.getPlayer();
 			if(isBlankKey ? !player.hasPermission("serialkey.use.key") : !player.hasPermission("serialkey.use.masterkey")) {
 				SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().messagePermission);
@@ -156,7 +157,6 @@ public class GlobalListener implements Listener {
 			}
 			SerialKeyAPI.createPadlock(location, item);
 			SerialKeyAPI.sendMessage(player, SerialKeyAPI.getMessages().message1);
-			event.setCancelled(true);
 		}
 		else if(action == Action.RIGHT_CLICK_BLOCK) {
 			final Location location = clicked.getLocation();
