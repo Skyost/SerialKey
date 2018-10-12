@@ -38,7 +38,9 @@ public class BunchOfKeysListener extends SerialKeyListener {
 				break;
 			}
 		case RIGHT_CLICK_AIR:
-			api.createInventory(event.getItem(), event.getPlayer());
+			if(api.createInventory(event.getItem(), event.getPlayer()) != null) {
+				event.setCancelled(true);
+			}
 		default:
 			break;
 		}
