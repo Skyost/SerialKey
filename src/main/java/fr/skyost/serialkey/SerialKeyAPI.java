@@ -716,6 +716,17 @@ public class SerialKeyAPI {
 		}
 
 		if(players != null) {
+			final int amount = bunchOfKeys.getAmount();
+			if(amount >= 2) {
+				bunchOfKeys.setAmount(1);
+
+				final ItemStack drop = bunchOfKeys.clone();
+				drop.setAmount(amount - 1);
+				for(final Player player : players) {
+					player.getWorld().dropItemNaturally(player.getEyeLocation(), drop);
+				}
+			}
+
 			for(final Player player : players) {
 				player.openInventory(inventory);
 			}

@@ -5,7 +5,7 @@ plugins {
     id 'maven'
 }
 
-group = 'fr.skyost'
+group = 'fr.skyost.serialkey'
 version = '0.4'
 
 sourceCompatibility = 1.8
