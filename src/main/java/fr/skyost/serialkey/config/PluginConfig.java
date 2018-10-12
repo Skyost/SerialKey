@@ -30,6 +30,8 @@ public class PluginConfig extends Skyoconfig {
 	public boolean encryptLore = false;
 	@ConfigOptions(name = "options.can-rename-items")
 	public boolean canRenameItems = false;
+	@ConfigOptions(name = "options.allow-lost-chests")
+	public boolean allowLostChests = true;
 	
 	@ConfigOptions(name = "key.material")
 	public Material keyMaterial = Material.TRIPWIRE_HOOK;

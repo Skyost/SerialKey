@@ -28,7 +28,7 @@ public class PluginMessages extends Skyoconfig {
 	@ConfigOptions(name = "messages.5")
 	public String message5 = ChatColor.RED + "Padlock finder has been disabled.";
 	@ConfigOptions(name = "messages.6")
-	public String message6 = ChatColor.RED + "A similar key is already present !";
+	public String message6 = ChatColor.RED + "You can't place this key in this chest.";
 
 	/**
 	 * Creates a new plugin messages instance.

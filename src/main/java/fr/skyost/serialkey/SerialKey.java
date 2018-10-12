@@ -25,6 +25,7 @@ import fr.skyost.serialkey.listener.BlocksListener;
 import fr.skyost.serialkey.listener.BunchOfKeysListener;
 import fr.skyost.serialkey.listener.GlobalListener;
 import fr.skyost.serialkey.listener.HopperListener;
+import fr.skyost.serialkey.listener.LostChestsListener;
 import fr.skyost.serialkey.listener.PadlockFinderListener;
 import fr.skyost.serialkey.util.Skyupdater;
 import fr.skyost.serialkey.util.Util;
@@ -92,6 +93,9 @@ public class SerialKey extends JavaPlugin {
 			manager.registerEvents(new PadlockFinderListener(this), this);
 			if(config.disableHoppers) {
 				manager.registerEvents(new HopperListener(this), this);
+			}
+			if(!config.allowLostChests) {
+				manager.registerEvents(new LostChestsListener(this), this);
 			}
 			
 			// Commands :
