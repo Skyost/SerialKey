@@ -66,17 +66,25 @@ public class BunchOfKeysListener extends SerialKeyListener {
 		}
 
 		final HumanEntity player = event.getPlayer();
+
 		final ItemStack bunchOfKeys = player.getInventory().getItemInMainHand();
+		if(bunchOfKeys.getAmount() > 1) {
+			final ItemStack clone = bunchOfKeys.clone();
+			clone.setAmount(bunchOfKeys.getAmount() - 1);
+			player.getWorld().dropItemNaturally(player.getEyeLocation(), clone);
+
+			bunchOfKeys.setAmount(1);
+		}
+
 		api.clearKeys(bunchOfKeys);
 
 		final Collection<? extends ItemStack> items = inventory.all(api.getKeyItem().getType()).values();
 		for(final ItemStack item : items) {
 			api.addKey(bunchOfKeys, item);
 
-			final int amount = item.getAmount();
-			if(amount > 1) {
+			if(item.getAmount() > 1) {
 				final ItemStack clone = item.clone();
-				clone.setAmount(amount - 1);
+				clone.setAmount(item.getAmount() - 1);
 				player.getWorld().dropItemNaturally(player.getEyeLocation(), clone);
 			}
 		}
