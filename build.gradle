@@ -11,7 +11,7 @@ version = '0.4'
 sourceCompatibility = 1.8
 
 bukkit {
-    name = project.name.capitalize()
+    name = 'SerialKey'
     main = 'fr.skyost.serialkey.SerialKey'
     description = 'Lock your chests and doors.'
     author = 'Skyost'

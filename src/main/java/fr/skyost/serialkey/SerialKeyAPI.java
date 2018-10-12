@@ -68,6 +68,12 @@ public class SerialKeyAPI {
 	 */
 
 	private ItemStack padlockFinder;
+
+	/**
+	 * Creates a new SerialKey API instance.
+	 *
+	 * @param plugin The plugin instance.
+	 */
 	
 	SerialKeyAPI(final SerialKey plugin) {
 		this.plugin = plugin;
