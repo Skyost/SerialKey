@@ -1,0 +1,63 @@
+plugins {
+    id 'idea'
+    id 'de.fuerstenau.buildconfig' version '1.1.8'
+    id 'com.github.johnrengelman.shadow' version '2.0.4'
+    id 'org.spongepowered.plugin' version '0.9.0'
+    id 'java'
+    id 'signing'
+}
+
+version = '1.0'
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+repositories {
+    maven { url = 'http://repo.bstats.org/content/repositories/releases/' }
+}
+
+dependencies {
+    implementation project(':core')
+    compileOnly 'org.spongepowered:spongeapi:7.1.0'
+    annotationProcessor 'org.spongepowered:spongeapi:7.1.0'
+    implementation 'org.bstats:bstats-sponge-lite:1.2'
+}
+
+signing {
+    sign configurations.archives
+}
+
+shadowJar {
+    destinationDir = new File(rootProject.projectDir, 'build/release/')
+    version = project.version
+    mergeServiceFiles()
+    relocate 'org.bstats.sponge', 'fr.skyost.serialkey.sponge.util.bstats'
+}
+
+def properties = new Properties()
+file("plugin.properties").withInputStream { properties.load(it) }
+
+sponge {
+    plugin {
+        id = properties.id
+        meta {
+            name = properties.name
+            version = project.version
+            description = properties.description
+            url = properties.url
+            authors = Arrays.asList(String.valueOf(properties.authors).split(", "))
+        }
+    }
+}
+
+buildConfig {
+    packageName = project.group + '.sponge'
+
+    buildConfigField 'String', 'PLUGIN_ID', String.valueOf(properties.id)
+    buildConfigField 'String', 'PLUGIN_NAME', String.valueOf(properties.name)
+    buildConfigField 'String', 'PLUGIN_DESCRIPTION', String.valueOf(properties.description)
+    buildConfigField 'String', 'PLUGIN_URL', String.valueOf(properties.url)
+    buildConfigField 'String', 'PLUGIN_AUTHORS', String.valueOf(properties.authors)
+}

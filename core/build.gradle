@@ -1,0 +1,22 @@
+plugins {
+    id 'com.github.johnrengelman.shadow' version '2.0.4'
+    id 'java'
+    id 'maven'
+}
+
+version = '1.0'
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'com.google.code.gson:gson:2.8.0'
+}
+
+shadowJar {
+    destinationDir = new File(rootProject.projectDir, 'build/release/')
+    version = project.version
+    mergeServiceFiles()
+}

@@ -25,7 +25,7 @@ You can open, close or destroy the door only if you have the corresponding key i
 
 ## Documentation
 A documentation is available [here](https://dev.bukkit.org/projects/serial-key/pages/documentation). 
-Keep in mind that this documentation is for the **v0.4** of this plugin !
+Keep in mind that this documentation is for the **v1.0** of this plugin !
 
 ## Videos
 You can find all videos [here](https://dev.bukkit.org/projects/serial-key/pages/videos). 
