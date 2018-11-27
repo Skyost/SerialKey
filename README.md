@@ -57,14 +57,16 @@ Right click again with a padlock finder to disable it.
 * **serialkey.command.getkey** - Allows you to use /serialkey getkey. - _Default :_ Operators.
 
 ### Configuration
-**Please stop your server before each modification !**
+**Please stop your server before each modification !**    
+_NOTE :_ ``.yml`` can be replaced by `.conf` for Sponge.
 
 #### config.yml
 
 This file allows to configure the plugin.
 
 **enable** - Contains the third party services options.    
-— **updater** - If you want to automatically check for updates.
+— **updater** - If you want to automatically check for updates (or update the plugin for Bukkit).    
+— **metrics** - If you want to enable bStats.
 
 **options** - Contains the plugin options.   
 — **reusable-keys** - When you destroy a door, if this option is set to true, the plugin will pop a blank key in front of yourself. Otherwise, the key will be broken.    
@@ -89,7 +91,7 @@ The default craft is :
 The default craft is :    
 ![Master key default craft](https://media.forgecdn.net/attachments/119/977/masterkey-craft-default-new.png)
 
-bunch-of-keys - Contains the bunch of keys item options.    
+**bunch-of-keys** - Contains the bunch of keys item options.    
 — **material** - The bunch of keys item material. _A list of materials is available [here](https://minecraft-ids.grahamedgecombe.com/)._    
 — **name** - The bunch of keys item name. Supports colors.    
 — **shape** - The bunch of keys item craft shape. Max. three lines and three characters by line. Example : 'ABA', 'BAB', 'ABA'.
@@ -97,7 +99,7 @@ bunch-of-keys - Contains the bunch of keys item options.
 The default craft is :    
 ![Bunch of keys default craft](https://media.forgecdn.net/attachments/119/982/bunch-of-keys-craft-default.png)
 
-— shape-materials-vX - Contains data about the shape. Example : A: GRASS, B: STONE, C: SPONGE. **Do not take care about vX.** _A list of materials is available [here](https://minecraft-ids.grahamedgecombe.com/)._
+— **shape-materials-vX** - Contains data about the shape. Example : A: GRASS, B: STONE, C: SPONGE. **Do not take care about vX.** _A list of materials is available [here](https://minecraft-ids.grahamedgecombe.com/)._
 
 #### messages.yml
 _This file contains the plugin messages. You can translate it in your language._
