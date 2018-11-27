@@ -98,7 +98,6 @@ dependencies {
 }
 
 shadowJar {
-    destinationDir = new File(rootProject.projectDir, 'build/release/')
     version = project.version
     mergeServiceFiles()
     relocate 'org.bstats.bukkit', 'fr.skyost.serialkey.bukkit.util.bstats'

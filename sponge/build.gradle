@@ -10,6 +10,9 @@ plugins {
 version = '1.0'
 sourceCompatibility = 1.8
 
+def properties = new Properties()
+file("plugin.properties").withInputStream { properties.load(it) }
+
 repositories {
     mavenCentral()
 }
@@ -19,25 +22,24 @@ repositories {
 }
 
 dependencies {
+    def spongeVersion = properties.spongeVersion
+
     implementation project(':core')
-    compileOnly 'org.spongepowered:spongeapi:7.1.0'
-    annotationProcessor 'org.spongepowered:spongeapi:7.1.0'
+    compileOnly "org.spongepowered:spongeapi:$spongeVersion"
+    annotationProcessor "org.spongepowered:spongeapi:$spongeVersion"
     implementation 'org.bstats:bstats-sponge-lite:1.2'
 }
 
 signing {
     sign configurations.archives
+    sign shadowJar
 }
 
 shadowJar {
-    destinationDir = new File(rootProject.projectDir, 'build/release/')
     version = project.version
     mergeServiceFiles()
     relocate 'org.bstats.sponge', 'fr.skyost.serialkey.sponge.util.bstats'
 }
-
-def properties = new Properties()
-file("plugin.properties").withInputStream { properties.load(it) }
 
 sponge {
     plugin {
@@ -48,6 +50,11 @@ sponge {
             description = properties.description
             url = properties.url
             authors = Arrays.asList(String.valueOf(properties.authors).split(", "))
+            dependencies {
+                'spongeapi' {
+                    version = properties.spongeVersion
+                }
+            }
         }
     }
 }
@@ -60,4 +67,5 @@ buildConfig {
     buildConfigField 'String', 'PLUGIN_DESCRIPTION', String.valueOf(properties.description)
     buildConfigField 'String', 'PLUGIN_URL', String.valueOf(properties.url)
     buildConfigField 'String', 'PLUGIN_AUTHORS', String.valueOf(properties.authors)
+    buildConfigField 'String', 'SPONGE_VERSION', String.valueOf(properties.spongeVersion)
 }

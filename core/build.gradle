@@ -16,7 +16,6 @@ dependencies {
 }
 
 shadowJar {
-    destinationDir = new File(rootProject.projectDir, 'build/release/')
     version = project.version
     mergeServiceFiles()
 }

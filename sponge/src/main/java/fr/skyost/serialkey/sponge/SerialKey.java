@@ -26,6 +26,7 @@ import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.plugin.Dependency;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.service.permission.PermissionDescription;
 import org.spongepowered.api.service.permission.PermissionService;
@@ -39,7 +40,14 @@ import java.nio.file.Path;
  * The SerialKey plugin class.
  */
 
-@Plugin(id = BuildConfig.PLUGIN_ID, name = BuildConfig.PLUGIN_NAME, description = BuildConfig.PLUGIN_DESCRIPTION, version = BuildConfig.VERSION, url = BuildConfig.PLUGIN_URL, authors = BuildConfig.PLUGIN_AUTHORS)
+@Plugin(id = BuildConfig.PLUGIN_ID,
+		name = BuildConfig.PLUGIN_NAME,
+		description = BuildConfig.PLUGIN_DESCRIPTION,
+		version = BuildConfig.VERSION,
+		url = BuildConfig.PLUGIN_URL,
+		authors = BuildConfig.PLUGIN_AUTHORS,
+		dependencies = {@Dependency(id = "spongeapi", version = BuildConfig.SPONGE_VERSION)}
+)
 public class SerialKey implements SerialKeyPlugin<ItemStack, Location<World>> {
 
 	/**
@@ -96,7 +104,6 @@ public class SerialKey implements SerialKeyPlugin<ItemStack, Location<World>> {
 
 	@Listener
 	public void onGamePreInitialize(final GamePreInitializationEvent event) throws SpongeConfig.InvalidConfigurationException {
-		// TODO: Needs proper error handling
 		// Configuration :
 
 		config = new SpongePluginConfig(dataFolder.resolve("config.conf"));
