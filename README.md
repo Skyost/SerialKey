@@ -107,6 +107,9 @@ _This file contains the plugin messages. You can translate it in your language._
 #### data.yml
 This file contains the plugin data. Please, ignore this (and do not edit it manually)._
 
+## Videos
+[Here](https://www.youtube.com/watch?v=R7MYarBGLgs) is the official video (but it is a bit outdated). If you have a YouTube channel and have made a video, do not hesitate to send it to me. I will post it with pleasure !
+
 ## Donations
 _Development costs time and time is the money of life. Please feel free to donate._
 
