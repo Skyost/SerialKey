@@ -29,7 +29,7 @@ public class BukkitLostChestsListener extends LostChestsListener<ItemStack, Loca
 		super(plugin);
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	private void onInventoryClick(final InventoryClickEvent event) {
 		final InventoryHolder holder = event.getInventory().getHolder();
 

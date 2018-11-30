@@ -125,6 +125,9 @@ public class SerialKey implements SerialKeyPlugin<ItemStack, Location<World>> {
 		eventManager.registerListeners(this, new SpongeBlocksListener(this));
 		eventManager.registerListeners(this, new SpongeBunchOfKeysListener(this));
 		eventManager.registerListeners(this, new SpongePadlockFinderListener(this));
+		if(!config.canRenameItems) {
+			eventManager.registerListeners(this, new SpongeAnvilListener(this));
+		}
 		if(config.disableHoppers) {
 			eventManager.registerListeners(this, new SpongeHopperListener(this));
 		}

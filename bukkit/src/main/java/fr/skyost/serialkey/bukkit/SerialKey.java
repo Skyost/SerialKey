@@ -87,6 +87,9 @@ public class SerialKey extends JavaPlugin implements SerialKeyPlugin<ItemStack, 
 			manager.registerEvents(new BukkitBlocksListener(this), this);
 			manager.registerEvents(new BukkitBunchOfKeysListener(this), this);
 			manager.registerEvents(new BukkitPadlockFinderListener(this), this);
+			if(!config.canRenameItems) {
+				manager.registerEvents(new BukkitAnvilListener(this), this);
+			}
 			if(config.disableHoppers) {
 				manager.registerEvents(new BukkitHopperListener(this), this);
 			}

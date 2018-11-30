@@ -7,7 +7,7 @@ plugins {
     id 'signing'
 }
 
-version = '1.0'
+version = '1.0.1'
 sourceCompatibility = 1.8
 
 def properties = new Properties()
