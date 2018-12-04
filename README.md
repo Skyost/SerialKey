@@ -42,9 +42,11 @@ When you make a right click with it, every compass in your inventory will point 
 Right click again with a padlock finder to disable it.
 
 ### Commands
-/serialkey getkey - See below for permission. - Allows you to get the key corresponding to your facing block.
+**/serialkey getkey** - _See below for permission._ - Allows you to get the key corresponding to your facing block.
 
 ### Permissions
+A permission plugin may be needed to use with Sponge platform.
+
 * **serialkey.craft.key** - Allows you to craft a key. - _Default :_ Everyone.
 * **serialkey.craft.masterkey** - Allows you to craft a master key. - _Default :_ Operators.
 * **serialkey.craft.keyclone** - Allows you to craft a key clone. - _Default :_ Everyone.
