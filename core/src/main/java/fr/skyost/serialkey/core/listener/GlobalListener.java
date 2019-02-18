@@ -73,7 +73,7 @@ public abstract class GlobalListener<I, L> extends SerialKeyListener<I, L> {
 	 * @param cancelEvent The runnable that cancels the event.
 	 */
 
-	protected void onPlayerLeftClick(final I item, final SerialKeyLocation location, final SerialKeyPerson player, final SerialKeyLocation playerLocation, final Consumer<I> dropItem, final Runnable clearHand, final Runnable playBreakSound, final Runnable cancelEvent) {
+	protected void onPlayerLeftClick(final I item, final SerialKeyLocation location, final SerialKeyPerson player, final Consumer<I> dropItem, final Runnable clearHand, final Runnable playBreakSound, final Runnable cancelEvent) {
 		if(padlockManager.hasPadlock(location)) {
 			if(unlocker.canUnlock(item, location, player)) {
 				if(!itemManager.isMasterKey(item)) {

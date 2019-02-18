@@ -68,7 +68,6 @@ public class SpongeGlobalListener extends GlobalListener<ItemStack, Location<Wor
 						player.getItemInHand(event.getHandType()).orElse(Util.blankItem()),
 						SpongeTypeConverter.toSerialKeyLocation(location),
 						SpongeTypeConverter.toSerialKeyPerson(player),
-						SpongeTypeConverter.toSerialKeyLocation(player.getLocation()),
 						item -> Util.dropItemAt(item, player.getLocation()),
 						() -> player.setItemInHand(event.getHandType(), Util.blankItem()),
 						() -> location.getExtent().playSound(SoundTypes.ENTITY_ITEM_BREAK, location.getPosition(), 1f),

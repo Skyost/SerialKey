@@ -42,7 +42,8 @@ public class BukkitGlobalListener extends GlobalListener<ItemStack, Location> im
 	private void onPrepareItemCraft(final PrepareItemCraftEvent event) {
 		final CraftingInventory craftingTable = event.getInventory();
 		final ItemStack result = craftingTable.getResult();
-		final String key = event.getRecipe() instanceof ShapedRecipe ? ((ShapedRecipe)event.getRecipe()).getKey().getNamespace() : null;
+		final String key = event.getRecipe() instanceof ShapedRecipe ? ((ShapedRecipe)event.getRecipe()).getKey().getKey() : null;
+
 		super.onPreviewItemCraft(
 				BukkitTypeConverter.toSerialKeyPerson(event.getView().getPlayer()),
 				craftingTable.getMatrix(),
@@ -63,7 +64,6 @@ public class BukkitGlobalListener extends GlobalListener<ItemStack, Location> im
 					event.getItem(),
 					BukkitTypeConverter.toSerialKeyLocation(event.getClickedBlock().getLocation()),
 					BukkitTypeConverter.toSerialKeyPerson(event.getPlayer()),
-					BukkitTypeConverter.toSerialKeyLocation(event.getPlayer().getLocation()),
 					item -> player.getWorld().dropItemNaturally(player.getLocation(), item),
 					() -> player.getInventory().setItemInMainHand(new ItemStack(Material.AIR)),
 					() -> player.playSound(event.getClickedBlock().getLocation(), Sound.ENTITY_ITEM_BREAK, 1f, 1f),
