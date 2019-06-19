@@ -1,5 +1,7 @@
 package fr.skyost.serialkey.bukkit.util;
 
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonObject;
 import com.google.common.base.Joiner;
 import com.google.common.primitives.Primitives;
 import org.bukkit.Bukkit;
@@ -9,9 +11,6 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.util.Vector;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,10 +30,10 @@ import java.util.Map.Entry;
 /**
  * <h1>Skyoconfig</h1>
  * <p><i>Handle configurations with ease !</i></p>
- * <p><b>Current version :</b> v0.8.
+ * <p><b>Current version :</b> v0.9.
  *
  * @author <b>Skyost</b> (<a href="http://www.skyost.eu">www.skyost.eu</a>).
- * <br>Inspired from <a href="https://forums.bukkit.org/threads/lib-supereasyconfig-v1-2-based-off-of-codename_bs-awesome-easyconfig-v2-1.100569/">SuperEasyConfig</a>.
+ * <br>Inspired from <a href="https://forums.bukkit.org/threads/lib-supereasyconfig-v1-2-based-off-of-codename_bs-awesome-easyconfig-v2-1.100569/">SuperEasyConfig</a>.</br>
  */
 
 public class Skyoconfig {
@@ -115,7 +114,7 @@ public class Skyoconfig {
 	}
 
 	/**
-	 * Returns the formatted <b>Field</b>'s name.
+	 * Gets the formatted <b>Field</b>'s name.
 	 *
 	 * @param field The <b>Field</b>.
 	 *
@@ -145,10 +144,7 @@ public class Skyoconfig {
 
 	private boolean ignoreField(final Field field) {
 		final ConfigOptions options = field.getAnnotation(ConfigOptions.class);
-		if(options == null) {
-			return false;
-		}
-		return options.ignore();
+		return options != null && options.ignore();
 	}
 
 	/**
@@ -173,14 +169,13 @@ public class Skyoconfig {
 	 * @param name The <b>Field</b>'s name. Will be the path.
 	 * @param config The <b>YamlConfiguration</b>.
 	 *
-	 * @throws ParseException If the JSON parser fails to parse a <b>SerialKeyLocation</b> or a <b>Vector</b>.
 	 * @throws IllegalAccessException If <b>Skyoconfig</b> does not have access to the <b>Field</b> or the <b>Method</b> <b>valueOf</b> of a <b>Primitive</b>.
 	 * @throws InvocationTargetException Invoked if the <b>Skyoconfig</b> fails to use <b>valueOf</b> for a <b>Primitive</b>.
 	 * @throws NoSuchMethodException Same as <b>InvocationTargetException</b>.
 	 * @throws InstantiationException When a <b>Map</b> cannot be created.
 	 */
 
-	private void loadField(final Field field, final String name, final YamlConfiguration config) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, ParseException, InstantiationException {
+	private void loadField(final Field field, final String name, final YamlConfiguration config) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException {
 		if(Modifier.isTransient(field.getModifiers()) || ignoreField(field)) {
 			return;
 		}
@@ -218,7 +213,6 @@ public class Skyoconfig {
 	 *
 	 * @return The deserialized value of the specified <b>Object</b>.
 	 *
-	 * @throws ParseException If the JSON parser fails to parse a <b>SerialKeyLocation</b> or a <b>Vector</b>.
 	 * @throws IllegalAccessException If <b>Skyoconfig</b> does not have access to the <b>Field</b> or the <b>Method</b> <b>valueOf</b> of a <b>Primitive</b>.
 	 * @throws InvocationTargetException Invoked if the <b>Skyoconfig</b> fails to use <b>valueOf</b> for a <b>Primitive</b>.
 	 * @throws NoSuchMethodException Same as <b>InvocationTargetException</b>.
@@ -226,7 +220,7 @@ public class Skyoconfig {
 	 */
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
-	private Object deserializeObject(final Class<?> clazz, final Object object) throws ParseException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException {
+	private Object deserializeObject(final Class<?> clazz, final Object object) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException {
 		if(clazz.isPrimitive()) {
 			return Primitives.wrap(clazz).getMethod("valueOf", String.class).invoke(this, object.toString());
 		}
@@ -238,13 +232,13 @@ public class Skyoconfig {
 		}
 		if(Map.class.isAssignableFrom(clazz) || object instanceof Map) {
 			final ConfigurationSection section = (ConfigurationSection)object;
-			final Map<Object, Object> deserializedMap = new HashMap<>();
+			final Map<Object, Object> unserializedMap = new HashMap<>();
 			for(final String key : section.getKeys(false)) {
 				final Object value = section.get(key);
-				deserializedMap.put(key, deserializeObject(value.getClass(), value));
+				unserializedMap.put(key, deserializeObject(value.getClass(), value));
 			}
 			final Object map = clazz.newInstance();
-			clazz.getMethod("putAll", Map.class).invoke(map, deserializedMap);
+			clazz.getMethod("putAll", Map.class).invoke(map, unserializedMap);
 			return map;
 		}
 		if(List.class.isAssignableFrom(clazz) || object instanceof List) {
@@ -255,12 +249,12 @@ public class Skyoconfig {
 			return result;
 		}
 		if(Location.class.isAssignableFrom(clazz) || object instanceof Location) {
-			final JSONObject jsonObject = (JSONObject)new JSONParser().parse(object.toString());
-			return new Location(Bukkit.getWorld(jsonObject.get("world").toString()), Double.parseDouble(jsonObject.get("x").toString()), Double.parseDouble(jsonObject.get("y").toString()), Double.parseDouble(jsonObject.get("z").toString()), Float.parseFloat(jsonObject.get("yaw").toString()), Float.parseFloat(jsonObject.get("pitch").toString()));
+			final JsonObject jsonObject = Json.parse(object.toString()).asObject();
+			return new Location(Bukkit.getWorld(jsonObject.get("world").asString()), Double.parseDouble(jsonObject.get("x").asString()), Double.parseDouble(jsonObject.get("y").asString()), Double.parseDouble(jsonObject.get("z").asString()), Float.parseFloat(jsonObject.get("yaw").asString()), Float.parseFloat(jsonObject.get("pitch").asString()));
 		}
 		if(Vector.class.isAssignableFrom(clazz) || object instanceof Vector) {
-			final JSONObject jsonObject = (JSONObject)new JSONParser().parse(object.toString());
-			return new Vector(Double.parseDouble(jsonObject.get("x").toString()), Double.parseDouble(jsonObject.get("y").toString()), Double.parseDouble(jsonObject.get("z").toString()));
+			final JsonObject jsonObject = Json.parse(object.toString()).asObject();
+			return new Vector(Double.parseDouble(jsonObject.get("x").asString()), Double.parseDouble(jsonObject.get("y").asString()), Double.parseDouble(jsonObject.get("z").asString()));
 		}
 		return ChatColor.translateAlternateColorCodes('&', object.toString());
 	}
@@ -299,28 +293,28 @@ public class Skyoconfig {
 		}
 		if(object instanceof Location) {
 			final Location location = (Location)object;
-			final JSONObject jsonObject = new JSONObject();
-			jsonObject.put("world", location.getWorld().getName());
-			jsonObject.put("x", location.getX());
-			jsonObject.put("y", location.getY());
-			jsonObject.put("z", location.getZ());
-			jsonObject.put("yaw", location.getYaw());
-			jsonObject.put("pitch", location.getPitch());
-			return jsonObject.toJSONString();
+			final JsonObject jsonObject = new JsonObject();
+			jsonObject.add("world", location.getWorld().getName());
+			jsonObject.add("x", location.getX());
+			jsonObject.add("y", location.getY());
+			jsonObject.add("z", location.getZ());
+			jsonObject.add("yaw", location.getYaw());
+			jsonObject.add("pitch", location.getPitch());
+			return jsonObject.toString();
 		}
 		if(object instanceof Vector) {
 			final Vector vector = (Vector)object;
-			final JSONObject jsonObject = new JSONObject();
-			jsonObject.put("x", vector.getX());
-			jsonObject.put("y", vector.getY());
-			jsonObject.put("z", vector.getZ());
-			return jsonObject.toJSONString();
+			final JsonObject jsonObject = new JsonObject();
+			jsonObject.add("x", vector.getX());
+			jsonObject.add("y", vector.getY());
+			jsonObject.add("z", vector.getZ());
+			return jsonObject.toString();
 		}
 		return object;
 	}
 
 	/**
-	 * Returns the configuration's header.
+	 * Gets the configuration's header.
 	 *
 	 * @return The header.
 	 */
@@ -330,7 +324,7 @@ public class Skyoconfig {
 	}
 
 	/**
-	 * Returns the configuration's <b>File</b>.
+	 * Gets the configuration's <b>File</b>.
 	 *
 	 * @return The <b>File</b>.
 	 */

@@ -95,6 +95,7 @@ dependencies {
     implementation project(':core')
     compileOnly 'org.bukkit:bukkit:1.14.2-R0.1-SNAPSHOT'
     implementation 'org.bstats:bstats-bukkit-lite:1.2'
+    implementation 'com.eclipsesource.minimal-json:minimal-json:0.9.5'
 }
 
 shadowJar {
