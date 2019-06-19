@@ -14,6 +14,7 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.entity.InteractEntityEvent;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.item.inventory.CraftItemEvent;
 import org.spongepowered.api.item.ItemTypes;
@@ -84,6 +85,14 @@ public class SpongeGlobalListener extends GlobalListener<ItemStack, Location<Wor
 			SpongeTypeConverter.toSerialKeyPerson(player),
 			() -> event.setCancelled(true)
 		));
+	}
+
+	@Listener(order = Order.LATE)
+	public void onPlayerRightClickEntity(final InteractEntityEvent.Secondary event, @First final Player player) {
+		super.onPlayerRightClickEntity(
+				player.getItemInHand(event.getHandType()).orElse(Util.blankItem()),
+				() -> event.setCancelled(true)
+		);
 	}
 
 	@Override

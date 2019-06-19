@@ -17,8 +17,10 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.CraftingInventory;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 
@@ -82,6 +84,13 @@ public class BukkitGlobalListener extends GlobalListener<ItemStack, Location> im
 		}
 	}
 
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+	private void onPlayerInteractEntity(final PlayerInteractEntityEvent event) {
+		super.onPlayerRightClickEntity(
+				event.getHand() == EquipmentSlot.HAND ? event.getPlayer().getInventory().getItemInMainHand() : event.getPlayer().getInventory().getItemInOffHand(),
+				() -> event.setCancelled(true)
+		);
+	}
 
 	@Override
 	protected ItemStack copy(final ItemStack item) {

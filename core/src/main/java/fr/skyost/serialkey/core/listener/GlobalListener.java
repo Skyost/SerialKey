@@ -142,6 +142,19 @@ public abstract class GlobalListener<I, L> extends SerialKeyListener<I, L> {
 	}
 
 	/**
+	 * Triggered when a player right clicks an entity.
+	 *
+	 * @param item The item that was used.
+	 * @param cancelEvent The runnable that cancels the event.
+	 */
+
+	protected void onPlayerRightClickEntity(final I item, final Runnable cancelEvent) {
+		if(itemManager.isKey(item) || itemManager.isMasterKey(item) || itemManager.isBunchOfKeys(item)) {
+			cancelEvent.run();
+		}
+	}
+
+	/**
 	 * Checks whether the specified player has the permission to craft the specified item.
 	 *
 	 * @param player The player.
