@@ -8,7 +8,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -107,15 +109,15 @@ public class BukkitItemManager extends PluginItemManager<ItemStack> {
 	/**
 	 * Checks if the specified inventory is a bunch of keys (blank or used).
 	 *
-	 * @param inventory The inventory.
+	 * @param event The inventory event.
 	 *
 	 * @return <b>true :</b> yes.
 	 * <br><b>false :</b> no.
 	 */
 
-	public boolean isBunchOfKeys(final Inventory inventory) {
+	public boolean isBunchOfKeys(final InventoryEvent event) {
 		final ItemStack bunchOfKeys = getBunchOfKeysItem();
-		return inventory.getName().equals(bunchOfKeys.getItemMeta().getDisplayName()) && inventory.getSize() == 9;
+		return event.getView().getTitle().equals(bunchOfKeys.getItemMeta().getDisplayName()) && event.getInventory().getSize() == 9;
 	}
 
 	/**

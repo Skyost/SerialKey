@@ -61,7 +61,7 @@ public class BukkitBunchOfKeysListener extends BunchOfKeysListener<ItemStack, Lo
 	
 	@EventHandler
 	private void onInventoryClick(final InventoryClickEvent event) {
-		if(!itemManager.isBunchOfKeys(event.getInventory())) {
+		if(!itemManager.isBunchOfKeys(event)) {
 			return;
 		}
 
@@ -73,8 +73,7 @@ public class BukkitBunchOfKeysListener extends BunchOfKeysListener<ItemStack, Lo
 	
 	@EventHandler
 	private void onInventoryClose(final InventoryCloseEvent event) {
-		final Inventory inventory = event.getInventory();
-		if(!itemManager.isBunchOfKeys(inventory)) {
+		if(!itemManager.isBunchOfKeys(event)) {
 			return;
 		}
 
@@ -94,6 +93,7 @@ public class BukkitBunchOfKeysListener extends BunchOfKeysListener<ItemStack, Lo
 
 		unlocker.clearLocations(bunchOfKeys);
 
+		final Inventory inventory = event.getInventory();
 		final int n = inventory.getSize();
 		for(int i = 0; i < n; i++) {
 			final ItemStack item = inventory.getItem(i);

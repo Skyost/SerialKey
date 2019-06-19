@@ -5,7 +5,7 @@ plugins {
     id 'maven'
 }
 
-version = '1.0.2'
+version = '1.0.3'
 sourceCompatibility = 1.8
 
 bukkit {
@@ -14,7 +14,7 @@ bukkit {
     description = 'Lock your chests and doors.'
     author = 'Skyost'
     website = 'http://dev.bukkit.org/bukkit-plugins/serial-key/'
-    apiVersion = '1.13'
+    apiVersion = '1.14'
 
     commands {
         serialkey {
@@ -93,7 +93,7 @@ repositories {
 
 dependencies {
     implementation project(':core')
-    compileOnly 'org.bukkit:bukkit:1.13.2-R0.1-SNAPSHOT'
+    compileOnly 'org.bukkit:bukkit:1.14.2-R0.1-SNAPSHOT'
     implementation 'org.bstats:bstats-bukkit-lite:1.2'
 }
 
