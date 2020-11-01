@@ -52,4 +52,27 @@ object Util {
         }
         return map
     }
+
+    /**
+     * Returns the first index matched by the given sublist.
+     *
+     * @param sublist The sublist.
+     * @param list The list.
+     *
+     * @return The sublist index (or -1 if not found).
+     */
+    @JvmStatic
+    fun <T> sublistIndex(sublist: List<T>, list: List<T>): Int {
+        var res = 0
+        var i = 0
+        while (i < sublist.size && res + i < list.size) {
+            if (list[res + i] == sublist[i]) {
+                i++
+            } else {
+                i = 0
+                res++
+            }
+        }
+        return if (res >= list.size) -1 else res
+    }
 }

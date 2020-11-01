@@ -30,7 +30,7 @@ abstract class GetKeyCommand<I>(private val plugin: SerialKeyPlugin<I, *>) {
         }
         if (targetedBlock != null && plugin.padlockManager.hasPadlock(targetedBlock)) {
             val key = copyItem(plugin.itemManager.keyItem)
-            plugin.unlocker.addLocation(key, targetedBlock)
+            plugin.unlocker.setLocation(key, targetedBlock)
             dropItem.accept(key)
             return 1
         }

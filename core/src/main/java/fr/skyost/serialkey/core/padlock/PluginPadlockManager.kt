@@ -17,7 +17,7 @@ abstract class PluginPadlockManager<I, L>(private val plugin: SerialKeyPlugin<I,
      * @param data The data.
      */
     fun load(data: SerialKeyData) {
-        val locations: Collection<SerialKeyLocation> = data.padlocks
+        val locations: Collection<SerialKeyLocation> = data.getPadlocks()
         for (location in locations) {
             registerPadlock(location)
         }
@@ -53,7 +53,7 @@ abstract class PluginPadlockManager<I, L>(private val plugin: SerialKeyPlugin<I,
     fun registerPadlock(location: SerialKeyLocation, item: I?) {
         super.registerPadlock(location)
         if (item != null && plugin.itemManager.isBlankKey(item)) {
-            plugin.unlocker.addLocation(item, location)
+            plugin.unlocker.setLocation(item, location)
         }
     }
 
@@ -114,10 +114,13 @@ abstract class PluginPadlockManager<I, L>(private val plugin: SerialKeyPlugin<I,
         super.unregisterPadlock(location)
         if (item != null) {
             if (plugin.itemManager.isUsedKey(item)) {
-                plugin.unlocker.clearLocations(item)
+                plugin.unlocker.setLocation(item, null)
             }
             if (plugin.itemManager.isUsedBunchOfKeys(item)) {
-                plugin.unlocker.removeLocation(item, location)
+                val toRemove = plugin.itemManager.getBunchOfKeysContent(item).firstOrNull { itemData -> plugin.unlocker.getLocation(itemData) == location }
+                if(toRemove != null) {
+                    plugin.itemManager.removeDataFromBunchOfKeys(item, toRemove)
+                }
             }
         }
     }

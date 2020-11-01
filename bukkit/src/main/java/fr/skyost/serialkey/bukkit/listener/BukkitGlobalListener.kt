@@ -8,7 +8,9 @@ import fr.skyost.serialkey.core.listener.GlobalListener
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.Sound
+import org.bukkit.block.Barrel
 import org.bukkit.block.Chest
+import org.bukkit.block.ShulkerBox
 import org.bukkit.block.data.type.TrapDoor
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -88,6 +90,6 @@ class BukkitGlobalListener(plugin: SerialKeyPlugin<ItemStack, Location>) : Globa
 
     override fun isPadlockLocationValid(location: SerialKeyLocation): Boolean {
         val block = BukkitTypeConverter.toBukkitLocation(location).block
-        return block.state is Chest || DoorUtil.getInstance(block.blockData) != null || block.blockData is TrapDoor
+        return block.state is Chest || block.state is Barrel || block.state is ShulkerBox || DoorUtil.getInstance(block.blockData) != null || block.blockData is TrapDoor
     }
 }

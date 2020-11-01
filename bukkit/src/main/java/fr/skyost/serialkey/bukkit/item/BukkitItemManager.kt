@@ -13,7 +13,6 @@ import org.bukkit.event.inventory.InventoryEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ShapedRecipe
-import java.util.*
 import java.util.function.Function
 
 /**
@@ -56,15 +55,17 @@ class BukkitItemManager private constructor(private val plugin: SerialKey, confi
         return item1.type == item2.type
     }
 
-    override fun getLore(`object`: ItemStack?): MutableList<String> {
-        val meta = `object`?.itemMeta ?: return ArrayList()
-        val lore = meta.lore
-        return lore ?: ArrayList()
+    override fun getItemData(`object`: ItemStack): ItemData {
+        val meta = `object`.itemMeta
+        return ItemData(meta?.displayName ?: "", meta?.lore)
     }
 
-    override fun setLore(`object`: ItemStack, lore: List<String>?) {
+    override fun setItemData(`object`: ItemStack, data: ItemData) {
         val meta = `object`.itemMeta
-        meta!!.lore = lore
+        if(data.displayName != null) {
+            meta?.setDisplayName(data.displayName)
+        }
+        meta?.lore = data.lore
         `object`.itemMeta = meta
     }
 
@@ -91,16 +92,17 @@ class BukkitItemManager private constructor(private val plugin: SerialKey, confi
     fun createInventory(bunchOfKeys: ItemStack, vararg players: Player): Inventory {
         val inventory = Bukkit.createInventory(null, 9, bunchOfKeys.itemMeta!!.displayName)
         inventory.maxStackSize = 1
-        val lore: List<String> = getLore(bunchOfKeys)
-        val n = lore.size
-        var i = 0
-        while (i < n) {
+        val content: List<ItemData> = getBunchOfKeysContent(bunchOfKeys)
+
+        for (item in content) {
             val key = keyItem.clone()
             val meta = key.itemMeta
-            meta!!.lore = listOf(lore[i], lore[++i])
+            if(item.displayName != null) {
+                meta?.setDisplayName(item.displayName)
+            }
+            meta?.lore = item.lore
             key.itemMeta = meta
             inventory.addItem(key)
-            i++
         }
 
         /*final List<SerialKeyLocation> locations = unlocker.getLocations(bunchOfKeys);

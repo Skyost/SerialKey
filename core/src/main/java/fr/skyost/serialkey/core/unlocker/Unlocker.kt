@@ -15,7 +15,7 @@ interface Unlocker<T> {
      *
      * @return All locations located in the item lore.
      */
-    fun getLocations(item: T): Collection<SerialKeyLocation?>?
+    fun getLocations(item: T?): Collection<SerialKeyLocation>
 
     /**
      * Returns whether the item can unlock the padlock located at the specified location.
@@ -25,18 +25,5 @@ interface Unlocker<T> {
      *
      * @return Whether the item can unlock the padlock located at the specified location.
      */
-    fun canUnlock(item: T?, location: SerialKeyLocation): Boolean {
-        return canUnlock(item, location.world!!, location.position)
-    }
-
-    /**
-     * Returns whether the item can unlock the padlock located at the specified location.
-     *
-     * @param item The item.
-     * @param world The world.
-     * @param position The position.
-     *
-     * @return Whether the item can unlock the padlock located at the specified location.
-     */
-    fun canUnlock(item: T?, world: String, position: String): Boolean
+    fun canUnlock(item: T?, location: SerialKeyLocation): Boolean
 }

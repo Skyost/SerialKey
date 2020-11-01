@@ -1,0 +1,7 @@
+/.gradle/
+/.idea/
+/core/build/classes/java/main/fr/skyost/serialkey/core/
+/core/build/libs/
+/core/build/tmp/shadowJar/
+/core/build/tmp/jar/
+/sponge/build/

@@ -26,7 +26,6 @@ import org.spongepowered.api.text.serializer.TextSerializers
 import java.util.*
 import java.util.function.Function
 import java.util.stream.Collectors
-import kotlin.collections.ArrayList
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
@@ -79,16 +78,17 @@ class SpongeItemManager private constructor(private val plugin: SerialKey, confi
         return item1.type === item2.type
     }
 
-    override fun getLore(`object`: ItemStack?): MutableList<String> {
-        if (`object` == null) {
-            return java.util.ArrayList()
-        }
-        val lore = `object`.get(Keys.ITEM_LORE)
-        return lore.map { texts: List<Text> -> texts.stream().map { text: Text -> TextSerializers.FORMATTING_CODE.serialize(text) }.collect(Collectors.toList()) }.orElseGet { ArrayList() }
+    override fun getItemData(`object`: ItemStack): ItemData {
+        val rawLore = `object`.get(Keys.ITEM_LORE)
+        val lore = rawLore.map { texts: List<Text> -> texts.stream().map { text: Text -> TextSerializers.FORMATTING_CODE.serialize(text) }.collect(Collectors.toList()) }.get()
+        return ItemData(TextSerializers.FORMATTING_CODE.serialize(`object`.get(Keys.DISPLAY_NAME).get()), lore)
     }
 
-    override fun setLore(`object`: ItemStack, lore: List<String>?) {
-        `object`.offer<List<Text>>(Keys.ITEM_LORE, if (lore == null) java.util.ArrayList<Text>() else lore.stream().map { string: String -> parseString(string) }.collect(Collectors.toList()))
+    override fun setItemData(`object`: ItemStack, data: ItemData) {
+        if(data.displayName != null) {
+            `object`.offer(Keys.DISPLAY_NAME, parseString(data.displayName!!))
+        }
+        `object`.offer(Keys.ITEM_LORE, if (data.lore == null) java.util.ArrayList() else data.lore!!.stream().map { string: String -> parseString(string) }.collect(Collectors.toList()))
     }
 
     /**
@@ -143,7 +143,7 @@ class SpongeItemManager private constructor(private val plugin: SerialKey, confi
                     dropItemAt(item, player.location)
                     return@ifPresent
                 }
-                unlocker.addLocation(bunchOfKeys, item)
+                addKeyToBunchOfKeys(bunchOfKeys, item)
                 if (item.quantity > 1) {
                     val clone = item.copy()
                     clone.quantity = item.quantity - 1

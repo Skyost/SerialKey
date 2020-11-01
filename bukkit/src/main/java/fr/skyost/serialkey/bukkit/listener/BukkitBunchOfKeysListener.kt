@@ -56,7 +56,7 @@ class BukkitBunchOfKeysListener(plugin: SerialKeyPlugin<ItemStack, Location>) : 
             player.world.dropItemNaturally(player.eyeLocation, clone)
             bunchOfKeys.amount = 1
         }
-        unlocker.clearLocations(bunchOfKeys)
+        itemManager.clearKeysFromBunchOfKeys(bunchOfKeys)
         val inventory = event.inventory
         val n = inventory.size
         for (i in 0 until n) {
@@ -65,7 +65,7 @@ class BukkitBunchOfKeysListener(plugin: SerialKeyPlugin<ItemStack, Location>) : 
                 player.world.dropItemNaturally(player.location, item)
                 continue
             }
-            unlocker.addLocation(bunchOfKeys, item)
+            itemManager.addKeyToBunchOfKeys(bunchOfKeys, item)
             if (item.amount > 1) {
                 val clone = item.clone()
                 clone.amount = item.amount - 1
