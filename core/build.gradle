@@ -1,10 +1,12 @@
 plugins {
-    id 'com.github.johnrengelman.shadow' version '2.0.4'
+    id 'idea'
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
     id 'java'
     id 'maven'
+    id 'org.jetbrains.kotlin.jvm' version '1.4.10'
 }
 
-version = '1.0.3'
+version = '1.1.0'
 sourceCompatibility = 1.8
 
 repositories {
@@ -12,10 +14,16 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'com.google.code.gson:gson:2.8.5'
+    shadow 'com.google.code.gson:gson:2.8.5'
 }
 
 shadowJar {
     version = project.version
     mergeServiceFiles()
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }

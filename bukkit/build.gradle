@@ -1,11 +1,13 @@
 plugins {
+    id 'idea'
     id 'com.github.johnrengelman.shadow' version '2.0.4'
     id 'net.minecrell.plugin-yml.bukkit' version '0.3.0'
     id 'java'
     id 'maven'
+    id 'org.jetbrains.kotlin.jvm' version '1.4.10'
 }
 
-version = '1.0.3'
+version = '1.1.0'
 sourceCompatibility = 1.8
 
 bukkit {
@@ -14,7 +16,7 @@ bukkit {
     description = 'Lock your chests and doors.'
     author = 'Skyost'
     website = 'http://dev.bukkit.org/bukkit-plugins/serial-key/'
-    apiVersion = '1.14'
+    apiVersion = '1.16'
 
     commands {
         serialkey {
@@ -87,14 +89,15 @@ bukkit {
 repositories {
     mavenCentral()
     maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
-    maven { url = 'http://nexus.hc.to/content/repositories/pub_releases' }
-    maven { url = 'http://repo.bstats.org/content/repositories/releases/' }
+    maven { url = 'https://maven.enginehub.org/repo/' }
+    maven { url = 'https://repo.codemc.org/repository/maven-public' }
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
     implementation project(':core')
-    compileOnly 'org.bukkit:bukkit:1.14.2-R0.1-SNAPSHOT'
-    implementation 'org.bstats:bstats-bukkit-lite:1.2'
+    shadow 'org.spigotmc:spigot-api:1.16.3-R0.1-SNAPSHOT'
+    implementation 'org.bstats:bstats-bukkit-lite:1.7'
     implementation 'com.eclipsesource.minimal-json:minimal-json:0.9.5'
 }
 
@@ -102,4 +105,10 @@ shadowJar {
     version = project.version
     mergeServiceFiles()
     relocate 'org.bstats.bukkit', 'fr.skyost.serialkey.bukkit.util.bstats'
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }

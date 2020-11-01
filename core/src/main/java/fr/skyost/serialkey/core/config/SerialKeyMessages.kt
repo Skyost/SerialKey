@@ -1,73 +1,62 @@
-package fr.skyost.serialkey.core.config;
+package fr.skyost.serialkey.core.config
 
 /**
  * Allows to configure SerialKey messages.
  */
+interface SerialKeyMessages {
+    /**
+     * The plugin messages prefix.
+     *
+     * @return The plugin messages prefix.
+     */
+    val prefix: String
 
-public interface SerialKeyMessages {
+    /**
+     * Returns the permission message.
+     *
+     * @return The permission message.
+     */
+    val permissionMessage: String
 
-	/**
-	 * The plugin messages prefix.
-	 *
-	 * @return The plugin messages prefix.
-	 */
+    /**
+     * Returns the "padlock placed" message.
+     *
+     * @return The "padlock placed" message.
+     */
+    val padlockPlacedMessage: String
 
-	String getPrefix();
+    /**
+     * Returns the "padlock removed" message.
+     *
+     * @return The "padlock removed" message.
+     */
+    val padlockRemovedMessage: String
 
-	/**
-	 * Returns the permission message.
-	 *
-	 * @return The permission message.
-	 */
+    /**
+     * Returns the "block has a padlock" message.
+     *
+     * @return The "block has a padlock" message.
+     */
+    val blockHasPadlockMessage: String
 
-	String getPermissionMessage();
+    /**
+     * Returns the "padlock finder enabled" message.
+     *
+     * @return The "padlock finder enabled" message.
+     */
+    val padlockFinderEnabledMessage: String
 
-	/**
-	 * Returns the "padlock placed" message.
-	 *
-	 * @return The "padlock placed" message.
-	 */
+    /**
+     * Returns the "padlock finder disabled" message.
+     *
+     * @return The "padlock finder disabled" message.
+     */
+    val padlockFinderDisabledMessage: String
 
-	String getPadlockPlacedMessage();
-
-	/**
-	 * Returns the "padlock removed" message.
-	 *
-	 * @return The "padlock removed" message.
-	 */
-
-	String getPadlockRemovedMessage();
-
-	/**
-	 * Returns the "block has a padlock" message.
-	 *
-	 * @return The "block has a padlock" message.
-	 */
-
-	String getBlockHasPadlockMessage();
-
-	/**
-	 * Returns the "padlock finder enabled" message.
-	 *
-	 * @return The "padlock finder enabled" message.
-	 */
-
-	String getPadlockFinderEnabledMessage();
-
-	/**
-	 * Returns the "padlock finder disabled" message.
-	 *
-	 * @return The "padlock finder disabled" message.
-	 */
-
-	String getPadlockFinderDisabledMessage();
-
-	/**
-	 * Returns the "chest protected" message.
-	 *
-	 * @return The "chest protected" message.
-	 */
-
-	String getChestProtectionMessage();
-
+    /**
+     * Returns the "chest protected" message.
+     *
+     * @return The "chest protected" message.
+     */
+    val chestProtectionMessage: String
 }

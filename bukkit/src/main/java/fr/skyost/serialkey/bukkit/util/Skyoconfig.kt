@@ -1,383 +1,310 @@
-package fr.skyost.serialkey.bukkit.util;
+package fr.skyost.serialkey.bukkit.util
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonObject;
-import com.google.common.base.Joiner;
-import com.google.common.primitives.Primitives;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.util.Vector;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+import com.eclipsesource.json.Json
+import com.eclipsesource.json.JsonObject
+import com.google.common.base.Joiner
+import com.google.common.primitives.Primitives
+import org.bukkit.Bukkit
+import org.bukkit.ChatColor
+import org.bukkit.Location
+import org.bukkit.configuration.ConfigurationSection
+import org.bukkit.configuration.InvalidConfigurationException
+import org.bukkit.configuration.file.YamlConfiguration
+import org.bukkit.util.Vector
+import java.io.File
+import java.io.IOException
+import java.lang.reflect.Field
+import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Modifier
+import java.util.*
 
 /**
  * <h1>Skyoconfig</h1>
- * <p><i>Handle configurations with ease !</i></p>
- * <p><b>Current version :</b> v0.9.
  *
- * @author <b>Skyost</b> (<a href="http://www.skyost.eu">www.skyost.eu</a>).
- * <br>Inspired from <a href="https://forums.bukkit.org/threads/lib-supereasyconfig-v1-2-based-off-of-codename_bs-awesome-easyconfig-v2-1.100569/">SuperEasyConfig</a>.</br>
+ * *Handle configurations with ease !*
+ *
+ * **Current version :** v0.9.
+ *
+ * @author **Skyost** ([www.skyost.eu](http://www.skyost.eu)).
+ * <br></br>Inspired from [SuperEasyConfig](https://forums.bukkit.org/threads/lib-supereasyconfig-v1-2-based-off-of-codename_bs-awesome-easyconfig-v2-1.100569/).
  */
+open class Skyoconfig protected constructor(@field:Transient var file: File, @field:Transient var header: List<String?>? = null) {
+    /**
+     * Gets the configuration's **File**.
+     *
+     * @return The **File**.
+     */
+    /**
+     * Gets the configuration's header.
+     *
+     * @return The header.
+     */
 
-public class Skyoconfig {
+    /**
+     * Loads the configuration from the specified file.
+     *
+     * @throws InvalidConfigurationException If there is an error while loading the config.
+     */
+    @Throws(InvalidConfigurationException::class)
+    fun load() {
+        try {
+            val config = YamlConfiguration.loadConfiguration(file)
+            var clazz: Class<*> = javaClass
+            while (clazz != Skyoconfig::class.java) {
+                for (field in clazz.fields) {
+                    loadField(field, getFieldName(field), config)
+                }
+                clazz = clazz.superclass
+            }
+            saveConfig(config)
+        } catch (ex: Exception) {
+            throw InvalidConfigurationException(ex)
+        }
+    }
 
-	private static final transient char DEFAULT_SEPARATOR = '_';
-	private static final transient String LINE_SEPARATOR = System.lineSeparator();
-	private static final transient String TEMP_CONFIG_SECTION = "temp";
+    /**
+     * Saves the configuration to the specified file.
+     *
+     * @throws InvalidConfigurationException If there is an error while saving the config.
+     */
+    @Throws(InvalidConfigurationException::class)
+    fun save() {
+        try {
+            val config = YamlConfiguration.loadConfiguration(file)
+            var clazz: Class<*> = javaClass
+            while (clazz != Skyoconfig::class.java) {
+                for (field in clazz.fields) {
+                    saveField(field, getFieldName(field), config)
+                }
+                clazz = clazz.superclass
+            }
+            saveConfig(config)
+        } catch (ex: Exception) {
+            throw InvalidConfigurationException(ex)
+        }
+    }
 
-	private transient File configFile;
-	private transient List<String> header;
+    /**
+     * Gets the formatted **Field**'s name.
+     *
+     * @param field The **Field**.
+     *
+     * @return The formatted **Field**'s name.
+     */
+    private fun getFieldName(field: Field): String {
+        val options = field.getAnnotation(ConfigOptions::class.java)
+                ?: return field.name.replace(DEFAULT_SEPARATOR, '.')
+        val name: String = options.name
+        return if (name == "") {
+            field.name.replace(DEFAULT_SEPARATOR, '.')
+        } else name
+    }
 
-	/**
-	 * Creates a new instance of Skyoconfig without header.
-	 *
-	 * @param configFile The file where the configuration will be loaded an saved.
-	 */
+    /**
+     * Checks if a field should be ignored.
+     *
+     * @param field The **Field**.
+     *
+     * @return **true** Yes.
+     * <br></br>**false** Otherwise.
+     */
+    private fun ignoreField(field: Field): Boolean {
+        val options = field.getAnnotation(ConfigOptions::class.java)
+        return options != null && options.ignore
+    }
 
-	protected Skyoconfig(final File configFile) {
-		this(configFile, null);
-	}
+    /**
+     * Saves the configuration.
+     *
+     * @param config The **YamlConfiguration**.
+     *
+     * @throws IOException **InputOutputException**.
+     */
+    @Throws(IOException::class)
+    private fun saveConfig(config: YamlConfiguration) {
+        if (header != null && header!!.isNotEmpty()) {
+            config.options().header(Joiner.on(LINE_SEPARATOR).join(header!!))
+        }
+        config.save(file)
+    }
 
-	/**
-	 * Creates a new instance of Skyoconfig.
-	 *
-	 * @param configFile The file where the configuration will be loaded an saved.
-	 * @param header The configuration's header.
-	 */
+    /**
+     * Loads a Field from its path from the config.
+     *
+     * @param field The specified **Field**.
+     * @param name The **Field**'s name. Will be the path.
+     * @param config The **YamlConfiguration**.
+     *
+     * @throws IllegalAccessException If **Skyoconfig** does not have access to the **Field** or the **Method** **valueOf** of a **Primitive**.
+     * @throws InvocationTargetException Invoked if the **Skyoconfig** fails to use **valueOf** for a **Primitive**.
+     * @throws NoSuchMethodException Same as **InvocationTargetException**.
+     * @throws InstantiationException When a **Map** cannot be created.
+     */
+    @Throws(IllegalAccessException::class, InvocationTargetException::class, NoSuchMethodException::class, InstantiationException::class)
+    private fun loadField(field: Field, name: String, config: YamlConfiguration) {
+        if (Modifier.isTransient(field.modifiers) || ignoreField(field)) {
+            return
+        }
+        val configValue = config[getFieldName(field)]
+        if (configValue == null) {
+            saveField(field, name, config)
+        } else {
+            field[this] = deserializeObject(field.type, configValue)
+        }
+    }
 
-	protected Skyoconfig(final File configFile, final List<String> header) {
-		this.configFile = configFile;
-		this.header = header;
-	}
+    /**
+     * Saves a **Field** to the config.
+     *
+     * @param field The specified **Field**.
+     * @param name The **Field**'s name. The path of the value in the config.
+     * @param config The **YamlConfiguration**.
+     *
+     * @throws IllegalAccessException If **Skyoconfig** does not have access to the **Field**.
+     */
+    @Throws(IllegalAccessException::class)
+    private fun saveField(field: Field, name: String, config: YamlConfiguration) {
+        if (Modifier.isTransient(field.modifiers) || ignoreField(field)) {
+            return
+        }
+        config[name] = serializeObject(field[this], config)
+    }
 
-	/**
-	 * Loads the configuration from the specified file.
-	 *
-	 * @throws InvalidConfigurationException If there is an error while loading the config.
-	 */
+    /**
+     * Deserializes an **Object** from the configuration.
+     *
+     * @param clazz The object's **Type**.
+     * @param object The **Object**'s.
+     *
+     * @return The deserialized value of the specified **Object**.
+     *
+     * @throws IllegalAccessException If **Skyoconfig** does not have access to the **Field** or the **Method** **valueOf** of a **Primitive**.
+     * @throws InvocationTargetException Invoked if the **Skyoconfig** fails to use **valueOf** for a **Primitive**.
+     * @throws NoSuchMethodException Same as **InvocationTargetException**.
+     * @throws InstantiationException When a **Map** cannot be created.
+     */
+    @Throws(IllegalAccessException::class, InvocationTargetException::class, NoSuchMethodException::class, InstantiationException::class)
+    private fun deserializeObject(clazz: Class<*>, `object`: Any?): Any {
+        if (clazz.isPrimitive) {
+            return Primitives.wrap(clazz).getMethod("valueOf", String::class.java).invoke(this, `object`.toString())
+        }
+        if (Primitives.isWrapperType(clazz)) {
+            return clazz.getMethod("valueOf", String::class.java).invoke(this, `object`.toString())
+        }
+        if (clazz.isEnum || `object` is Enum<*>) {
+            return java.lang.Enum.valueOf(clazz as Class<out Enum<*>>, `object`.toString())!!
+        }
+        if (MutableMap::class.java.isAssignableFrom(clazz) || `object` is Map<*, *>) {
+            val section = `object` as ConfigurationSection?
+            val unserializedMap: MutableMap<Any, Any> = HashMap()
+            for (key in section!!.getKeys(false)) {
+                val value = section[key]
+                unserializedMap[key] = deserializeObject(value!!.javaClass, value)
+            }
+            val map = clazz.newInstance()
+            clazz.getMethod("putAll", MutableMap::class.java).invoke(map, unserializedMap)
+            return map
+        }
+        if (MutableList::class.java.isAssignableFrom(clazz) || `object` is List<*>) {
+            val result: MutableList<Any> = ArrayList()
+            for (value in (`object` as List<*>?)!!) {
+                result.add(deserializeObject(value!!.javaClass, value))
+            }
+            return result
+        }
+        if (Location::class.java.isAssignableFrom(clazz) || `object` is Location) {
+            val jsonObject = Json.parse(`object`.toString()).asObject()
+            return Location(Bukkit.getWorld(jsonObject["world"].asString()), jsonObject["x"].asString().toDouble(), jsonObject["y"].asString().toDouble(), jsonObject["z"].asString().toDouble(), jsonObject["yaw"].asString().toFloat(), jsonObject["pitch"].asString().toFloat())
+        }
+        if (Vector::class.java.isAssignableFrom(clazz) || `object` is Vector) {
+            val jsonObject = Json.parse(`object`.toString()).asObject()
+            return Vector(jsonObject["x"].asString().toDouble(), jsonObject["y"].asString().toDouble(), jsonObject["z"].asString().toDouble())
+        }
+        return ChatColor.translateAlternateColorCodes('&', `object`.toString())
+    }
 
-	public final void load() throws InvalidConfigurationException {
-		try {
-			final YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-			Class<?> clazz = getClass();
-			while(clazz != Skyoconfig.class) {
-				for(final Field field : clazz.getFields()) {
-					loadField(field, getFieldName(field), config);
-				}
-				clazz = clazz.getSuperclass();
-			}
-			saveConfig(config);
-		}
-		catch(final Exception ex) {
-			throw new InvalidConfigurationException(ex);
-		}
-	}
+    /**
+     * Serializes an **Object** to the configuration.
+     *
+     * @param object The specified **Object**.
+     * @param config The **YamlConfiguration**. Used to temporally save **Map**s.
+     *
+     * @return The serialized **Object**.
+     */
+    private fun serializeObject(`object`: Any?, config: YamlConfiguration): Any {
+        if(`object` == null) {
+            return "null"
+        }
+        if (`object` is String) {
+            return `object`.toString().replace(ChatColor.COLOR_CHAR, '&')
+        }
+        if (`object` is Enum<*>) {
+            return `object`.name
+        }
+        if (`object` is Map<*, *>) {
+            val section = config.createSection(TEMP_CONFIG_SECTION)
+            for ((key, value) in `object`) {
+                section[key.toString()] = serializeObject(value!!, config)
+            }
+            config[TEMP_CONFIG_SECTION] = null
+            return section
+        }
+        if (`object` is List<*>) {
+            val result: MutableList<Any> = ArrayList()
+            for (value in `object`) {
+                result.add(serializeObject(value, config))
+            }
+            return result
+        }
+        if (`object` is Location) {
+            val jsonObject = JsonObject()
+            jsonObject.add("world", `object`.world!!.name)
+            jsonObject.add("x", `object`.x)
+            jsonObject.add("y", `object`.y)
+            jsonObject.add("z", `object`.z)
+            jsonObject.add("yaw", `object`.yaw)
+            jsonObject.add("pitch", `object`.pitch)
+            return jsonObject.toString()
+        }
+        if (`object` is Vector) {
+            val jsonObject = JsonObject()
+            jsonObject.add("x", `object`.x)
+            jsonObject.add("y", `object`.y)
+            jsonObject.add("z", `object`.z)
+            return jsonObject.toString()
+        }
+        return `object`
+    }
 
-	/**
-	 * Saves the configuration to the specified file.
-	 *
-	 * @throws InvalidConfigurationException If there is an error while saving the config.
-	 */
+    /**
+     * Extra params for configuration fields.
+     */
+    @kotlin.annotation.Retention(AnnotationRetention.RUNTIME)
+    @Target(AnnotationTarget.FIELD)
+    protected annotation class ConfigOptions(
+            /**
+             * The key's name.
+             *
+             * @return The key's name.
+             */
+            val name: String = "",
+            /**
+             * If Skyoconfig should ignore this field.
+             *
+             * @return **true** Yes.
+             * <br></br>**false** Otherwise.
+             */
+            val ignore: Boolean = false
+    )
 
-	public final void save() throws InvalidConfigurationException {
-		try {
-			final YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-			Class<?> clazz = getClass();
-			while(clazz != Skyoconfig.class) {
-				for(final Field field : clazz.getFields()) {
-					saveField(field, getFieldName(field), config);
-				}
-				clazz = clazz.getSuperclass();
-			}
-			saveConfig(config);
-		}
-		catch(final Exception ex) {
-			throw new InvalidConfigurationException(ex);
-		}
-	}
+    companion object {
+        @Transient
+        private val DEFAULT_SEPARATOR = '_'
 
-	/**
-	 * Gets the formatted <b>Field</b>'s name.
-	 *
-	 * @param field The <b>Field</b>.
-	 *
-	 * @return The formatted <b>Field</b>'s name.
-	 */
+        @Transient
+        private val LINE_SEPARATOR = System.lineSeparator()
 
-	private String getFieldName(final Field field) {
-		final ConfigOptions options = field.getAnnotation(ConfigOptions.class);
-		if(options == null) {
-			return field.getName().replace(DEFAULT_SEPARATOR, '.');
-		}
-		final String name = options.name();
-		if(name.equals("")) {
-			return field.getName().replace(DEFAULT_SEPARATOR, '.');
-		}
-		return name;
-	}
-
-	/**
-	 * Checks if a field should be ignored.
-	 *
-	 * @param field The <b>Field</b>.
-	 *
-	 * @return <b>true</b> Yes.
-	 * <br><b>false</b> Otherwise.
-	 */
-
-	private boolean ignoreField(final Field field) {
-		final ConfigOptions options = field.getAnnotation(ConfigOptions.class);
-		return options != null && options.ignore();
-	}
-
-	/**
-	 * Saves the configuration.
-	 *
-	 * @param config The <b>YamlConfiguration</b>.
-	 *
-	 * @throws IOException <b>InputOutputException</b>.
-	 */
-
-	private void saveConfig(final YamlConfiguration config) throws IOException {
-		if(header != null && header.size() > 0) {
-			config.options().header(Joiner.on(LINE_SEPARATOR).join(header));
-		}
-		config.save(configFile);
-	}
-
-	/**
-	 * Loads a Field from its path from the config.
-	 *
-	 * @param field The specified <b>Field</b>.
-	 * @param name The <b>Field</b>'s name. Will be the path.
-	 * @param config The <b>YamlConfiguration</b>.
-	 *
-	 * @throws IllegalAccessException If <b>Skyoconfig</b> does not have access to the <b>Field</b> or the <b>Method</b> <b>valueOf</b> of a <b>Primitive</b>.
-	 * @throws InvocationTargetException Invoked if the <b>Skyoconfig</b> fails to use <b>valueOf</b> for a <b>Primitive</b>.
-	 * @throws NoSuchMethodException Same as <b>InvocationTargetException</b>.
-	 * @throws InstantiationException When a <b>Map</b> cannot be created.
-	 */
-
-	private void loadField(final Field field, final String name, final YamlConfiguration config) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException {
-		if(Modifier.isTransient(field.getModifiers()) || ignoreField(field)) {
-			return;
-		}
-		final Object configValue = config.get(getFieldName(field));
-		if(configValue == null) {
-			saveField(field, name, config);
-		}
-		else {
-			field.set(this, deserializeObject(field.getType(), configValue));
-		}
-	}
-
-	/**
-	 * Saves a <b>Field</b> to the config.
-	 *
-	 * @param field The specified <b>Field</b>.
-	 * @param name The <b>Field</b>'s name. The path of the value in the config.
-	 * @param config The <b>YamlConfiguration</b>.
-	 *
-	 * @throws IllegalAccessException If <b>Skyoconfig</b> does not have access to the <b>Field</b>.
-	 */
-
-	private void saveField(final Field field, final String name, final YamlConfiguration config) throws IllegalAccessException {
-		if(Modifier.isTransient(field.getModifiers()) || ignoreField(field)) {
-			return;
-		}
-		config.set(name, serializeObject(field.get(this), config));
-	}
-
-	/**
-	 * Deserializes an <b>Object</b> from the configuration.
-	 *
-	 * @param clazz The object's <b>Type</b>.
-	 * @param object The <b>Object</b>'s.
-	 *
-	 * @return The deserialized value of the specified <b>Object</b>.
-	 *
-	 * @throws IllegalAccessException If <b>Skyoconfig</b> does not have access to the <b>Field</b> or the <b>Method</b> <b>valueOf</b> of a <b>Primitive</b>.
-	 * @throws InvocationTargetException Invoked if the <b>Skyoconfig</b> fails to use <b>valueOf</b> for a <b>Primitive</b>.
-	 * @throws NoSuchMethodException Same as <b>InvocationTargetException</b>.
-	 * @throws InstantiationException When a <b>Map</b> cannot be created.
-	 */
-
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	private Object deserializeObject(final Class<?> clazz, final Object object) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException {
-		if(clazz.isPrimitive()) {
-			return Primitives.wrap(clazz).getMethod("valueOf", String.class).invoke(this, object.toString());
-		}
-		if(Primitives.isWrapperType(clazz)) {
-			return clazz.getMethod("valueOf", String.class).invoke(this, object.toString());
-		}
-		if(clazz.isEnum() || object instanceof Enum<?>) {
-			return Enum.valueOf((Class<? extends Enum>)clazz, object.toString());
-		}
-		if(Map.class.isAssignableFrom(clazz) || object instanceof Map) {
-			final ConfigurationSection section = (ConfigurationSection)object;
-			final Map<Object, Object> unserializedMap = new HashMap<>();
-			for(final String key : section.getKeys(false)) {
-				final Object value = section.get(key);
-				unserializedMap.put(key, deserializeObject(value.getClass(), value));
-			}
-			final Object map = clazz.newInstance();
-			clazz.getMethod("putAll", Map.class).invoke(map, unserializedMap);
-			return map;
-		}
-		if(List.class.isAssignableFrom(clazz) || object instanceof List) {
-			final List<Object> result = new ArrayList<>();
-			for(final Object value : (List<?>)object) {
-				result.add(deserializeObject(value.getClass(), value));
-			}
-			return result;
-		}
-		if(Location.class.isAssignableFrom(clazz) || object instanceof Location) {
-			final JsonObject jsonObject = Json.parse(object.toString()).asObject();
-			return new Location(Bukkit.getWorld(jsonObject.get("world").asString()), Double.parseDouble(jsonObject.get("x").asString()), Double.parseDouble(jsonObject.get("y").asString()), Double.parseDouble(jsonObject.get("z").asString()), Float.parseFloat(jsonObject.get("yaw").asString()), Float.parseFloat(jsonObject.get("pitch").asString()));
-		}
-		if(Vector.class.isAssignableFrom(clazz) || object instanceof Vector) {
-			final JsonObject jsonObject = Json.parse(object.toString()).asObject();
-			return new Vector(Double.parseDouble(jsonObject.get("x").asString()), Double.parseDouble(jsonObject.get("y").asString()), Double.parseDouble(jsonObject.get("z").asString()));
-		}
-		return ChatColor.translateAlternateColorCodes('&', object.toString());
-	}
-
-	/**
-	 * Serializes an <b>Object</b> to the configuration.
-	 *
-	 * @param object The specified <b>Object</b>.
-	 * @param config The <b>YamlConfiguration</b>. Used to temporally save <b>Map</b>s.
-	 *
-	 * @return The serialized <b>Object</b>.
-	 */
-
-	@SuppressWarnings("unchecked")
-	private Object serializeObject(final Object object, final YamlConfiguration config) {
-		if(object instanceof String) {
-			return object.toString().replace(ChatColor.COLOR_CHAR, '&');
-		}
-		if(object instanceof Enum) {
-			return ((Enum<?>)object).name();
-		}
-		if(object instanceof Map) {
-			final ConfigurationSection section = config.createSection(TEMP_CONFIG_SECTION);
-			for(final Entry<?, ?> entry : ((Map<?, ?>)object).entrySet()) {
-				section.set(entry.getKey().toString(), serializeObject(entry.getValue(), config));
-			}
-			config.set(TEMP_CONFIG_SECTION, null);
-			return section;
-		}
-		if(object instanceof List) {
-			final List<Object> result = new ArrayList<>();
-			for(final Object value : (List<?>)object) {
-				result.add(serializeObject(value, config));
-			}
-			return result;
-		}
-		if(object instanceof Location) {
-			final Location location = (Location)object;
-			final JsonObject jsonObject = new JsonObject();
-			jsonObject.add("world", location.getWorld().getName());
-			jsonObject.add("x", location.getX());
-			jsonObject.add("y", location.getY());
-			jsonObject.add("z", location.getZ());
-			jsonObject.add("yaw", location.getYaw());
-			jsonObject.add("pitch", location.getPitch());
-			return jsonObject.toString();
-		}
-		if(object instanceof Vector) {
-			final Vector vector = (Vector)object;
-			final JsonObject jsonObject = new JsonObject();
-			jsonObject.add("x", vector.getX());
-			jsonObject.add("y", vector.getY());
-			jsonObject.add("z", vector.getZ());
-			return jsonObject.toString();
-		}
-		return object;
-	}
-
-	/**
-	 * Gets the configuration's header.
-	 *
-	 * @return The header.
-	 */
-
-	public final List<String> getHeader() {
-		return header;
-	}
-
-	/**
-	 * Gets the configuration's <b>File</b>.
-	 *
-	 * @return The <b>File</b>.
-	 */
-
-	public final File getFile() {
-		return configFile;
-	}
-
-	/**
-	 * Sets the configuration's header.
-	 *
-	 * @param header The header.
-	 */
-
-	public final void setHeader(final List<String> header) {
-		this.header = header;
-	}
-
-	/**
-	 * Sets the configuration's <b>File</b>.
-	 *
-	 * @param configFile The <b>File</b>.
-	 */
-
-	public final void setFile(final File configFile) {
-		this.configFile = configFile;
-	}
-
-	/**
-	 * Extra params for configuration fields.
-	 */
-
-	@Retention(RetentionPolicy.RUNTIME)
-	@Target(ElementType.FIELD)
-	protected @interface ConfigOptions {
-
-		/**
-		 * The key's name.
-		 *
-		 * @return The key's name.
-		 */
-
-		String name() default "";
-
-		/**
-		 * If Skyoconfig should ignore this field.
-		 *
-		 * @return <b>true</b> Yes.
-		 * <br><b>false</b> Otherwise.
-		 */
-
-		boolean ignore() default false;
-
-	}
-
+        @Transient
+        private val TEMP_CONFIG_SECTION = "temp"
+    }
 }

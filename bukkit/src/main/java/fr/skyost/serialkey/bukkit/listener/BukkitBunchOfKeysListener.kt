@@ -1,130 +1,87 @@
-package fr.skyost.serialkey.bukkit.listener;
+package fr.skyost.serialkey.bukkit.listener
 
-import fr.skyost.serialkey.bukkit.item.BukkitItemManager;
-import fr.skyost.serialkey.core.SerialKeyPlugin;
-import fr.skyost.serialkey.core.listener.BunchOfKeysListener;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.entity.HumanEntity;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
+import fr.skyost.serialkey.bukkit.item.BukkitItemManager
+import fr.skyost.serialkey.core.SerialKeyPlugin
+import fr.skyost.serialkey.core.listener.BunchOfKeysListener
+import org.bukkit.Location
+import org.bukkit.Material
+import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.Listener
+import org.bukkit.event.block.Action
+import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryCloseEvent
+import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.ItemStack
 
 /**
  * A listener that allows to listen bunch of keys related events.
  */
+class BukkitBunchOfKeysListener(plugin: SerialKeyPlugin<ItemStack, Location>) : BunchOfKeysListener<ItemStack, Location>(plugin), Listener {
+    @EventHandler(priority = EventPriority.HIGHEST)
+    private fun onPlayerInteract(event: PlayerInteractEvent) {
+        when (event.action) {
+            Action.RIGHT_CLICK_BLOCK -> super.onPlayerRightClickOnBlock(event.clickedBlock!!.location, event.item) { cancelIfCreateInventory(event) }
+            Action.RIGHT_CLICK_AIR -> super.onPlayerRightClickOnAir(event.item) { cancelIfCreateInventory(event) }
+            else -> {}
+        }
+    }
 
-public class BukkitBunchOfKeysListener extends BunchOfKeysListener<ItemStack, Location> implements Listener {
+    @EventHandler
+    private fun onInventoryClick(event: InventoryClickEvent) {
+        require(itemManager is BukkitItemManager) { "Invalid item manager provided." }
+        if (!(itemManager as BukkitItemManager).isBunchOfKeys(event)) {
+            return
+        }
+        val item = event.currentItem
+        if (item!!.type != Material.AIR && !itemManager.isUsedKey(item)) {
+            event.isCancelled = true
+        }
+    }
 
-	/**
-	 * The item manager.
-	 */
+    @EventHandler
+    private fun onInventoryClose(event: InventoryCloseEvent) {
+        require(itemManager is BukkitItemManager) { "Invalid item manager provided." }
+        if (!(itemManager as BukkitItemManager).isBunchOfKeys(event)) {
+            return
+        }
+        val player = event.player
+        var bunchOfKeys = player.inventory.itemInOffHand
+        if (!itemManager.isBunchOfKeys(bunchOfKeys)) {
+            bunchOfKeys = player.inventory.itemInMainHand
+        }
+        if (bunchOfKeys.amount > 1) {
+            val clone = bunchOfKeys.clone()
+            clone.amount = bunchOfKeys.amount - 1
+            player.world.dropItemNaturally(player.eyeLocation, clone)
+            bunchOfKeys.amount = 1
+        }
+        unlocker.clearLocations(bunchOfKeys)
+        val inventory = event.inventory
+        val n = inventory.size
+        for (i in 0 until n) {
+            val item = inventory.getItem(i) ?: continue
+            if (!itemManager.isUsedKey(item)) {
+                player.world.dropItemNaturally(player.location, item)
+                continue
+            }
+            unlocker.addLocation(bunchOfKeys, item)
+            if (item.amount > 1) {
+                val clone = item.clone()
+                clone.amount = item.amount - 1
+                player.world.dropItemNaturally(player.eyeLocation, clone)
+            }
+        }
+    }
 
-	private BukkitItemManager itemManager;
-
-	/**
-	 * Creates a new bunch of keys listener instance.
-	 *
-	 * @param plugin The plugin.
-	 */
-
-	public BukkitBunchOfKeysListener(final SerialKeyPlugin<ItemStack, Location> plugin) {
-		super(plugin);
-	}
-
-	@Override
-	public void setPlugin(final SerialKeyPlugin<ItemStack, Location> plugin) {
-		if(!(plugin.getItemManager() instanceof BukkitItemManager)) {
-			throw new IllegalArgumentException("Invalid item manager provided.");
-		}
-
-		super.setPlugin(plugin);
-		itemManager = (BukkitItemManager)plugin.getItemManager();
-	}
-
-	@EventHandler(priority = EventPriority.HIGHEST)
-	private void onPlayerInteract(final PlayerInteractEvent event) {
-		switch(event.getAction()) {
-		case RIGHT_CLICK_BLOCK:
-			super.onPlayerRightClickOnBlock(event.getClickedBlock().getLocation(), event.getItem(), () -> cancelIfCreateInventory(event));
-			break;
-		case RIGHT_CLICK_AIR:
-			super.onPlayerRightClickOnAir(event.getItem(), () -> cancelIfCreateInventory(event));
-			break;
-		}
-	}
-	
-	@EventHandler
-	private void onInventoryClick(final InventoryClickEvent event) {
-		if(!itemManager.isBunchOfKeys(event)) {
-			return;
-		}
-
-		final ItemStack item = event.getCurrentItem();
-		if(item.getType() != Material.AIR && !itemManager.isUsedKey(item)) {
-			event.setCancelled(true);
-		}
-	}
-	
-	@EventHandler
-	private void onInventoryClose(final InventoryCloseEvent event) {
-		if(!itemManager.isBunchOfKeys(event)) {
-			return;
-		}
-
-		final HumanEntity player = event.getPlayer();
-		ItemStack bunchOfKeys = player.getInventory().getItemInOffHand();
-		if(!itemManager.isBunchOfKeys(bunchOfKeys)) {
-			bunchOfKeys = player.getInventory().getItemInMainHand();
-		}
-
-		if(bunchOfKeys.getAmount() > 1) {
-			final ItemStack clone = bunchOfKeys.clone();
-			clone.setAmount(bunchOfKeys.getAmount() - 1);
-			player.getWorld().dropItemNaturally(player.getEyeLocation(), clone);
-
-			bunchOfKeys.setAmount(1);
-		}
-
-		unlocker.clearLocations(bunchOfKeys);
-
-		final Inventory inventory = event.getInventory();
-		final int n = inventory.getSize();
-		for(int i = 0; i < n; i++) {
-			final ItemStack item = inventory.getItem(i);
-			if(item == null) {
-				continue;
-			}
-
-			if(!itemManager.isUsedKey(item)) {
-				player.getWorld().dropItemNaturally(player.getLocation(), item);
-				continue;
-			}
-
-			unlocker.addLocation(bunchOfKeys, item);
-			if(item.getAmount() > 1) {
-				final ItemStack clone = item.clone();
-				clone.setAmount(item.getAmount() - 1);
-				player.getWorld().dropItemNaturally(player.getEyeLocation(), clone);
-			}
-		}
-	}
-
-	/**
-	 * Cancels the specified event if the inventory has been successfully created.
-	 *
-	 * @param event The event.
-	 */
-
-	private void cancelIfCreateInventory(final PlayerInteractEvent event) {
-		if(itemManager.createInventory(event.getItem(), event.getPlayer()) != null) {
-			event.setCancelled(true);
-		}
-	}
-
+    /**
+     * Cancels the specified event if the inventory has been successfully created.
+     *
+     * @param event The event.
+     */
+    private fun cancelIfCreateInventory(event: PlayerInteractEvent) {
+        require(itemManager is BukkitItemManager) { "Invalid item manager provided." }
+        (itemManager as BukkitItemManager).createInventory(event.item!!, event.player)
+        event.isCancelled = true
+    }
 }

@@ -1,316 +1,161 @@
-package fr.skyost.serialkey.core.item;
-
-import java.util.List;
+package fr.skyost.serialkey.core.item
 
 /**
  * The class that allows to manage plugin items.
  *
  * @param <T> ItemStack class.
  */
+abstract class ItemManager<T>
+    /**
+     * Creates a new item manager instance.
+     *
+     * @param keyItem The key item.
+     * @param masterKeyItem The master key item.
+     * @param keyCloneItem The key clone item.
+     * @param bunchOfKeysItem The bunch of keys item.
+     * @param padlockFinderItem The padlock finder item.
+     */
+    protected constructor(var keyItem: T, var masterKeyItem: T, var keyCloneItem: T, var bunchOfKeysItem: T, var padlockFinderItem: T) {
 
-public abstract class ItemManager<T> {
+    /**
+     * Checks if the specified item is a key (blank or used).
+     *
+     * @param item The item.
+     *
+     * @return **true :** yes.
+     * <br></br>**false :** no.
+     */
+    abstract fun isKey(item: T?): Boolean
 
-	/**
-	 * The key item.
-	 */
+    /**
+     * Checks if the specified item is a blank key.
+     *
+     * @param item The item.
+     *
+     * @return **true :** yes.
+     * <br></br>**false :** no.
+     */
+    fun isBlankKey(item: T?): Boolean {
+        return isKey(item) && !isUsedKey(item)
+    }
 
-	private T key;
+    /**
+     * Checks if the specified item is an used key.
+     *
+     * @param item The item.
+     *
+     * @return **true :** yes.
+     * <br></br>**false :** no.
+     */
+    fun isUsedKey(item: T?): Boolean {
+        return isKey(item) && isLoreValid(item)
+    }
 
-	/**
-	 * The master key item.
-	 */
+    /**
+     * Checks if the specified item is a master key.
+     *
+     * @param item The item.
+     *
+     * @return **true :** yes.
+     * <br></br>**false :** no.
+     */
+    abstract fun isMasterKey(item: T?): Boolean
 
-	private T masterKey;
+    /**
+     * Checks if the specified item is a bunch of keys (blank or used).
+     *
+     * @param item The item.
+     *
+     * @return **true :** yes.
+     * <br></br>**false :** no.
+     */
+    abstract fun isBunchOfKeys(item: T?): Boolean
 
-	/**
-	 * The key clone item.
-	 */
+    /**
+     * Checks if the specified item is a blank bunch of keys.
+     *
+     * @param item The item.
+     *
+     * @return **true :** yes.
+     * <br></br>**false :** no.
+     */
+    fun isBlankBunchOfKeys(item: T?): Boolean {
+        return isBunchOfKeys(item) && !isUsedBunchOfKeys(item)
+    }
 
-	private T keyClone;
+    /**
+     * Checks if the specified item is an used bunch of keys.
+     *
+     * @param item The item.
+     *
+     * @return **true :** yes.
+     * <br></br>**false :** no.
+     */
+    fun isUsedBunchOfKeys(item: T?): Boolean {
+        return isBunchOfKeys(item) && isLoreValid(item)
+    }
 
-	/**
-	 * The bunch of keys item.
-	 */
+    /**
+     * Checks if the specified item is a padlock finder (blank or used).
+     *
+     * @param item The item.
+     *
+     * @return **true :** yes.
+     * <br></br>**false :** no.
+     */
+    abstract fun isPadlockFinder(item: T?): Boolean
 
-	private T bunchOfKeys;
+    /**
+     * Checks if the specified item is a blank padlock finder.
+     *
+     * @param item The item.
+     *
+     * @return **true :** yes.
+     * <br></br>**false :** no.
+     */
+    fun isBlankPadlockFinder(item: T?): Boolean {
+        return isPadlockFinder(item) && !isUsedPadlockFinder(item)
+    }
 
-	/**
-	 * The padlock finder item.
-	 */
+    /**
+     * Checks if the specified item is an used padlock finder.
+     *
+     * @param item The item.
+     *
+     * @return **true :** yes.
+     * <br></br>**false :** no.
+     */
+    fun isUsedPadlockFinder(item: T?): Boolean {
+        return isPadlockFinder(item) && isLoreValid(item)
+    }
 
-	private T padlockFinder;
+    /**
+     * Returns the specified item lore (must not be null).
+     *
+     * @param object The item.
+     *
+     * @return The specified item lore.
+     */
+    abstract fun getLore(`object`: T?): MutableList<String>
 
-	/**
-	 * Creates a new item manager instance.
-	 *
-	 * @param key The key item.
-	 * @param masterKey The master key item.
-	 * @param keyClone The key clone item.
-	 * @param bunchOfKeys The bunch of keys item.
-	 * @param padlockFinder The padlock finder item.
-	 */
+    /**
+     * Applies the lore to the specified item.
+     *
+     * @param object The item.
+     * @param lore The lore.
+     */
+    abstract fun setLore(`object`: T, lore: List<String>?)
 
-	protected ItemManager(final T key, final T masterKey, final T keyClone, final T bunchOfKeys, final T padlockFinder) {
-		this.key = key;
-		this.masterKey = masterKey;
-		this.keyClone = keyClone;
-		this.bunchOfKeys = bunchOfKeys;
-		this.padlockFinder = padlockFinder;
-	}
-
-	/**
-	 * Returns the key item.
-	 *
-	 * @return The key item.
-	 */
-
-	public T getKeyItem() {
-		return key;
-	}
-
-	/**
-	 * Sets the key item.
-	 *
-	 * @param key The key item.
-	 */
-
-	public void setKeyItem(final T key) {
-		this.key = key;
-	}
-
-	/**
-	 * Returns the master key item.
-	 *
-	 * @return The master key item.
-	 */
-
-	public T getMasterKeyItem() {
-		return masterKey;
-	}
-
-	/**
-	 * Sets the master key item.
-	 *
-	 * @param masterKey The master key item.
-	 */
-
-	public void setMasterKeyItem(final T masterKey) {
-		this.masterKey = masterKey;
-	}
-
-	/**
-	 * Returns the key clone item.
-	 *
-	 * @return The key clone item.
-	 */
-
-	public T getKeyCloneItem() {
-		return keyClone;
-	}
-
-	/**
-	 * Sets the key clone item.
-	 *
-	 * @param keyClone The key clone item.
-	 */
-
-	public void setKeyCloneItem(final T keyClone) {
-		this.keyClone = keyClone;
-	}
-
-	/**
-	 * Returns the bunch of keys item.
-	 *
-	 * @return The bunch of keys item.
-	 */
-
-	public T getBunchOfKeysItem() {
-		return bunchOfKeys;
-	}
-
-	/**
-	 * Sets the bunch of keys item.
-	 *
-	 * @param bunchOfKeys The bunch of keys item.
-	 */
-
-	public void setBunchOfKeysItem(final T bunchOfKeys) {
-		this.bunchOfKeys = bunchOfKeys;
-	}
-
-	/**
-	 * Returns the padlock finder item.
-	 *
-	 * @return The padlock finder item.
-	 */
-
-	public T getPadlockFinderItem() {
-		return padlockFinder;
-	}
-
-	/**
-	 * Sets the padlock finder item.
-	 *
-	 * @param padlockFinder The padlock finder item.
-	 */
-
-	public void setPadlockFinderItem(final T padlockFinder) {
-		this.padlockFinder = padlockFinder;
-	}
-
-	/**
-	 * Checks if the specified item is a key (blank or used).
-	 *
-	 * @param item The item.
-	 *
-	 * @return <b>true :</b> yes.
-	 * <br><b>false :</b> no.
-	 */
-
-	public abstract boolean isKey(final T item);
-
-	/**
-	 * Checks if the specified item is a blank key.
-	 *
-	 * @param item The item.
-	 *
-	 * @return <b>true :</b> yes.
-	 * <br><b>false :</b> no.
-	 */
-
-	public boolean isBlankKey(final T item) {
-		return isKey(item) && !isUsedKey(item);
-	}
-
-	/**
-	 * Checks if the specified item is an used key.
-	 *
-	 * @param item The item.
-	 *
-	 * @return <b>true :</b> yes.
-	 * <br><b>false :</b> no.
-	 */
-
-	public boolean isUsedKey(final T item) {
-		return isKey(item) && isLoreValid(item);
-	}
-
-	/**
-	 * Checks if the specified item is a master key.
-	 *
-	 * @param item The item.
-	 *
-	 * @return <b>true :</b> yes.
-	 * <br><b>false :</b> no.
-	 */
-
-	public abstract boolean isMasterKey(final T item);
-
-	/**
-	 * Checks if the specified item is a bunch of keys (blank or used).
-	 *
-	 * @param item The item.
-	 *
-	 * @return <b>true :</b> yes.
-	 * <br><b>false :</b> no.
-	 */
-
-	public abstract boolean isBunchOfKeys(final T item);
-
-	/**
-	 * Checks if the specified item is a blank bunch of keys.
-	 *
-	 * @param item The item.
-	 *
-	 * @return <b>true :</b> yes.
-	 * <br><b>false :</b> no.
-	 */
-
-	public boolean isBlankBunchOfKeys(final T item) {
-		return isBunchOfKeys(item) && !isUsedBunchOfKeys(item);
-	}
-
-	/**
-	 * Checks if the specified item is an used bunch of keys.
-	 *
-	 * @param item The item.
-	 *
-	 * @return <b>true :</b> yes.
-	 * <br><b>false :</b> no.
-	 */
-
-	public boolean isUsedBunchOfKeys(final T item) {
-		return isBunchOfKeys(item) && isLoreValid(item);
-	}
-
-	/**
-	 * Checks if the specified item is a padlock finder (blank or used).
-	 *
-	 * @param item The item.
-	 *
-	 * @return <b>true :</b> yes.
-	 * <br><b>false :</b> no.
-	 */
-
-	public abstract boolean isPadlockFinder(final T item);
-
-	/**
-	 * Checks if the specified item is a blank padlock finder.
-	 *
-	 * @param item The item.
-	 *
-	 * @return <b>true :</b> yes.
-	 * <br><b>false :</b> no.
-	 */
-
-	public boolean isBlankPadlockFinder(final T item) {
-		return isPadlockFinder(item) && !isUsedPadlockFinder(item);
-	}
-
-	/**
-	 * Checks if the specified item is an used padlock finder.
-	 *
-	 * @param item The item.
-	 *
-	 * @return <b>true :</b> yes.
-	 * <br><b>false :</b> no.
-	 */
-
-	public boolean isUsedPadlockFinder(final T item) {
-		return isPadlockFinder(item) && isLoreValid(item);
-	}
-
-	/**
-	 * Returns the specified item lore (must not be null).
-	 *
-	 * @param object The item.
-	 *
-	 * @return The specified item lore.
-	 */
-
-	public abstract List<String> getLore(final T object);
-
-	/**
-	 * Applies the lore to the specified item.
-	 *
-	 * @param object The item.
-	 * @param lore The lore.
-	 */
-
-	public abstract void setLore(final T object, final List<String> lore);
-
-	/**
-	 * Returns whether the lore of the specified item is valid or not.
-	 *
-	 * @param object The iteù.
-	 *
-	 * @return <b>true</b> Yes.
-	 * <br><b>false</b> Otherwise.
-	 */
-
-	public boolean isLoreValid(final T object) {
-		final List<String> lore = getLore(object);
-		return !lore.isEmpty() && lore.size() % 2 == 0;
-	}
-
+    /**
+     * Returns whether the lore of the specified item is valid or not.
+     *
+     * @param object The iteù.
+     *
+     * @return **true** Yes.
+     * <br></br>**false** Otherwise.
+     */
+    fun isLoreValid(`object`: T?): Boolean {
+        val lore = getLore(`object`)
+        return lore.isNotEmpty() && lore.size % 2 == 0
+    }
 }

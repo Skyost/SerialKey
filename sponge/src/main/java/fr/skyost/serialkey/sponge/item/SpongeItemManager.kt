@@ -1,195 +1,159 @@
-package fr.skyost.serialkey.sponge.item;
+package fr.skyost.serialkey.sponge.item
 
-import fr.skyost.serialkey.core.item.PluginItemManager;
-import fr.skyost.serialkey.core.unlocker.LoreUnlocker;
-import fr.skyost.serialkey.sponge.BuildConfig;
-import fr.skyost.serialkey.sponge.SerialKey;
-import fr.skyost.serialkey.sponge.config.SpongePluginConfig;
-import fr.skyost.serialkey.sponge.util.Util;
-import org.spongepowered.api.GameRegistry;
-import org.spongepowered.api.Sponge;
-import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.event.item.inventory.InteractInventoryEvent;
-import org.spongepowered.api.item.ItemType;
-import org.spongepowered.api.item.ItemTypes;
-import org.spongepowered.api.item.inventory.Inventory;
-import org.spongepowered.api.item.inventory.ItemStack;
-import org.spongepowered.api.item.inventory.property.InventoryDimension;
-import org.spongepowered.api.item.inventory.property.InventoryTitle;
-import org.spongepowered.api.item.recipe.crafting.CraftingRecipe;
-import org.spongepowered.api.item.recipe.crafting.Ingredient;
-import org.spongepowered.api.item.recipe.crafting.ShapedCraftingRecipe;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.serializer.TextSerializers;
-
-import java.util.*;
-import java.util.stream.Collectors;
+import fr.skyost.serialkey.core.item.PluginItemManager
+import fr.skyost.serialkey.core.unlocker.LoreUnlocker
+import fr.skyost.serialkey.core.util.Util.keepAll
+import fr.skyost.serialkey.sponge.BuildConfig
+import fr.skyost.serialkey.sponge.SerialKey
+import fr.skyost.serialkey.sponge.config.SpongePluginConfig
+import fr.skyost.serialkey.sponge.util.Util.createItem
+import fr.skyost.serialkey.sponge.util.Util.dropItemAt
+import fr.skyost.serialkey.sponge.util.Util.parseString
+import org.spongepowered.api.Sponge
+import org.spongepowered.api.data.key.Keys
+import org.spongepowered.api.entity.living.player.Player
+import org.spongepowered.api.event.item.inventory.InteractInventoryEvent
+import org.spongepowered.api.item.ItemType
+import org.spongepowered.api.item.ItemTypes
+import org.spongepowered.api.item.inventory.Inventory
+import org.spongepowered.api.item.inventory.ItemStack
+import org.spongepowered.api.item.inventory.property.InventoryDimension
+import org.spongepowered.api.item.inventory.property.InventoryTitle
+import org.spongepowered.api.item.recipe.crafting.Ingredient
+import org.spongepowered.api.item.recipe.crafting.ShapedCraftingRecipe
+import org.spongepowered.api.text.Text
+import org.spongepowered.api.text.serializer.TextSerializers
+import java.util.*
+import java.util.function.Function
+import java.util.stream.Collectors
+import kotlin.collections.ArrayList
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.set
 
 /**
  * The Sponge item manager class.
  */
+class SpongeItemManager private constructor(private val plugin: SerialKey, config: SpongePluginConfig, key: ItemStack) : PluginItemManager<ItemStack>(plugin.pluginConfig, key, createItem(config.masterKeyName, config.masterKeyMaterial), key.copy(), createItem(config.bunchOfKeysName, config.bunchOfKeysMaterial), createItem(config.padlockFinderName, ItemTypes.COMPASS)) {
+    /**
+     * Creates a new Sponge item manager instance.
+     *
+     * @param plugin The plugin instance.
+     */
+    constructor(plugin: SerialKey) : this(plugin, plugin.pluginConfig, createItem(plugin.pluginConfig.keyName, plugin.pluginConfig.keyMaterial))
 
-public class SpongeItemManager extends PluginItemManager<ItemStack> {
+    /**
+     * Creates a recipe for an item.
+     *
+     * @param id The recipe ID.
+     * @param result The item.
+     * @param shape The shape.
+     * @param ingredients The ingredients needed for the craft.
+     */
+    override fun <R> createRecipe(id: String, result: ItemStack, shape: List<String>, ingredients: Map<String, String>, register: Function<R, Unit>) {
+        var recipeIngredients = ingredients
+        if (recipeIngredients == plugin.pluginConfig.shapeMaterials) {
+            recipeIngredients = keepAll(ingredients, shape)
+        }
+        val registry = Sponge.getRegistry()
+        val where: MutableMap<Char, Ingredient> = HashMap()
+        recipeIngredients.forEach { (character: String, type: String?) -> registry.getType(ItemType::class.java, type).ifPresent { itemType: ItemType? -> where[character[0]] = Ingredient.of(itemType) } }
+        val recipe: ShapedCraftingRecipe = ShapedCraftingRecipe.builder()
+                .aisle(*shape.toTypedArray())
+                .where(where)
+                .result(result)
+                .id(id)
+                .build()
+        register.apply(recipe as R)
+    }
 
-	/**
-	 * The plugin instance.
-	 */
+    override fun isItemValid(item: ItemStack?): Boolean {
+        return item != null && item.get(Keys.DISPLAY_NAME).isPresent
+    }
 
-	private final SerialKey plugin;
+    override fun compareItemsName(item1: ItemStack, item2: ItemStack): Boolean {
+        return item1.get(Keys.DISPLAY_NAME) == item2.get(Keys.DISPLAY_NAME)
+    }
 
-	/**
-	 * Creates a new Sponge item manager instance.
-	 *
-	 * @param plugin The plugin instance.
-	 */
+    override fun compareItemsType(item1: ItemStack, item2: ItemStack): Boolean {
+        return item1.type === item2.type
+    }
 
-	public SpongeItemManager(final SerialKey plugin) {
-		this(plugin, plugin.getPluginConfig(), Util.createItem(plugin.getPluginConfig().keyName, plugin.getPluginConfig().keyMaterial));
-	}
+    override fun getLore(`object`: ItemStack?): MutableList<String> {
+        if (`object` == null) {
+            return java.util.ArrayList()
+        }
+        val lore = `object`.get(Keys.ITEM_LORE)
+        return lore.map { texts: List<Text> -> texts.stream().map { text: Text -> TextSerializers.FORMATTING_CODE.serialize(text) }.collect(Collectors.toList()) }.orElseGet { ArrayList() }
+    }
 
-	/**
-	 * Creates a new Bukkit item manager instance.
-	 *
-	 * @param plugin The plugin instance.
-	 * @param key The key item.
-	 */
+    override fun setLore(`object`: ItemStack, lore: List<String>?) {
+        `object`.offer<List<Text>>(Keys.ITEM_LORE, if (lore == null) java.util.ArrayList<Text>() else lore.stream().map { string: String -> parseString(string) }.collect(Collectors.toList()))
+    }
 
-	private SpongeItemManager(final SerialKey plugin, final SpongePluginConfig config, final ItemStack key) {
-		super(plugin.getPluginConfig(), key, Util.createItem(config.masterKeyName, config.masterKeyMaterial), key.copy(), Util.createItem(config.bunchOfKeysName, config.bunchOfKeysMaterial), Util.createItem(config.padlockFinderName, ItemTypes.COMPASS));
+    /**
+     * Creates an inventory for the specified bunch of keys and opens it for the specified players.
+     *
+     * @param unlocker The unlocker.
+     * @param bunchOfKeys The bunch of keys item.
+     * @param players The players.
+     *
+     * @return The inventory.
+     */
+    fun createInventory(unlocker: LoreUnlocker<ItemStack>, bunchOfKeys: ItemStack, vararg players: Player): Inventory {
+        val inventory = Inventory.builder()
+                .property(InventoryTitle.of(bunchOfKeys.get(Keys.DISPLAY_NAME).orElse(parseString(BuildConfig.PLUGIN_NAME))))
+                .property(InventoryDimension.of(9, 1))
+                .listener(InteractInventoryEvent.Close::class.java) { event: InteractInventoryEvent.Close -> event.cause.first(Player::class.java).ifPresent { player: Player -> onBunchOfKeysInventoryClose(unlocker, event.targetInventory.first(), bunchOfKeys, player) } }
+                .build(plugin)
+        val lore = bunchOfKeys.get(Keys.ITEM_LORE).orElse(java.util.ArrayList())
+        val n = lore.size
+        var i = 0
+        while (i < n) {
+            val key = keyItem.copy()
+            key.offer(Keys.ITEM_LORE, listOf(lore[i], lore[++i]))
+            inventory.offer(key)
+            i++
+        }
+        for (player in players) {
+            player.openInventory(inventory)
+        }
+        return inventory
+    }
 
-		this.plugin = plugin;
-		getKeyCloneItem().setQuantity(2);
-	}
+    /**
+     * Triggered when a bunch of keys inventory is closed.
+     *
+     * @param unlocker The unlocker.
+     * @param inventory The inventory.
+     * @param bunchOfKeys The bunch of keys item.
+     * @param player The involved player.
+     */
+    private fun onBunchOfKeysInventoryClose(unlocker: LoreUnlocker<ItemStack>, inventory: Inventory, bunchOfKeys: ItemStack, player: Player) {
+        if (bunchOfKeys.quantity > 1) {
+            val clone = bunchOfKeys.copy()
+            clone.quantity = bunchOfKeys.quantity - 1
+            dropItemAt(clone, player.location)
+            bunchOfKeys.quantity = 1
+        }
+        unlocker.clearLocations(bunchOfKeys)
+        while (inventory.size() > 0) {
+            inventory.poll().ifPresent { item: ItemStack ->
+                if (!isUsedKey(item)) {
+                    dropItemAt(item, player.location)
+                    return@ifPresent
+                }
+                unlocker.addLocation(bunchOfKeys, item)
+                if (item.quantity > 1) {
+                    val clone = item.copy()
+                    clone.quantity = item.quantity - 1
+                    dropItemAt(clone, player.location)
+                }
+            }
+        }
+    }
 
-	/**
-	 * Creates a recipe for an item.
-	 *
-	 * @param id The recipe ID.
-	 * @param result The item.
-	 * @param shape The shape.
-	 * @param ingredients The ingredients needed for the craft.
-	 */
-
-	@Override
-	public void createRecipe(final String id, final ItemStack result, final List<String> shape, Map<String, String> ingredients) {
-		if(ingredients.equals(plugin.getPluginConfig().shapeMaterials)) {
-			ingredients = fr.skyost.serialkey.core.util.Util.keepAll(ingredients, shape);
-		}
-
-		final GameRegistry registry = Sponge.getRegistry();
-		final Map<Character, Ingredient> where = new HashMap<>();
-		ingredients.forEach((character, type) -> registry.getType(ItemType.class, type).ifPresent(itemType -> where.put(character.charAt(0), Ingredient.of(itemType))));
-
-		final CraftingRecipe recipe = ShapedCraftingRecipe.builder()
-				.aisle(shape.toArray(new String[0]))
-				.where(where)
-				.result(result)
-				.build(id, plugin);
-
-		registry.getCraftingRecipeRegistry().register(recipe);
-	}
-
-	@Override
-	protected boolean isItemValid(final ItemStack item) {
-		return item != null && item.get(Keys.DISPLAY_NAME).isPresent();
-	}
-
-	@Override
-	protected boolean compareItemsName(final ItemStack item1, final ItemStack item2) {
-		return item1.get(Keys.DISPLAY_NAME).equals(item2.get(Keys.DISPLAY_NAME));
-	}
-
-	@Override
-	protected boolean compareItemsType(final ItemStack item1, final ItemStack item2) {
-		return item1.getType() == item2.getType();
-	}
-
-	@Override
-	public List<String> getLore(final ItemStack object) {
-		if(object == null) {
-			return new ArrayList<>();
-		}
-
-		final Optional<List<Text>> lore = object.get(Keys.ITEM_LORE);
-		return lore.map(texts -> texts.stream().map(TextSerializers.FORMATTING_CODE::serialize).collect(Collectors.toList())).orElseGet(ArrayList::new);
-	}
-
-	@Override
-	public void setLore(final ItemStack object, final List<String> lore) {
-		object.offer(Keys.ITEM_LORE, lore == null ? new ArrayList<>() : lore.stream().map(Util::parseString).collect(Collectors.toList()));
-	}
-
-	/**
-	 * Creates an inventory for the specified bunch of keys and opens it for the specified players.
-	 *
-	 * @param unlocker The unlocker.
-	 * @param bunchOfKeys The bunch of keys item.
-	 * @param players The players.
-	 *
-	 * @return The inventory.
-	 */
-
-	public Inventory createInventory(final LoreUnlocker<ItemStack> unlocker, final ItemStack bunchOfKeys, final Player... players) {
-		final Inventory inventory = Inventory.builder()
-				.property(InventoryTitle.of(bunchOfKeys.get(Keys.DISPLAY_NAME).orElse(Util.parseString(BuildConfig.PLUGIN_NAME))))
-				.property(InventoryDimension.of(9, 1))
-				.listener(InteractInventoryEvent.Close.class, event -> event.getCause().first(Player.class).ifPresent(player -> onBunchOfKeysInventoryClose(unlocker, event.getTargetInventory().first(), bunchOfKeys, player)))
-				.build(plugin);
-
-		final List<Text> lore = bunchOfKeys.get(Keys.ITEM_LORE).orElse(new ArrayList<>());
-		final int n = lore.size();
-		for(int i = 0; i < n; i++) {
-			final ItemStack key = getKeyItem().copy();
-			key.offer(Keys.ITEM_LORE, Arrays.asList(lore.get(i), lore.get(++i)));
-			inventory.offer(key);
-		}
-
-		if(players != null) {
-			for(final Player player : players) {
-				player.openInventory(inventory);
-			}
-		}
-
-		return inventory;
-	}
-
-	/**
-	 * Triggered when a bunch of keys inventory is closed.
-	 *
-	 * @param unlocker The unlocker.
-	 * @param inventory The inventory.
-	 * @param bunchOfKeys The bunch of keys item.
-	 * @param player The involved player.
-	 */
-
-	private void onBunchOfKeysInventoryClose(final LoreUnlocker<ItemStack> unlocker, final Inventory inventory, final ItemStack bunchOfKeys, final Player player) {
-		if(bunchOfKeys.getQuantity() > 1) {
-			final ItemStack clone = bunchOfKeys.copy();
-			clone.setQuantity(bunchOfKeys.getQuantity() - 1);
-			Util.dropItemAt(clone, player.getLocation());
-			bunchOfKeys.setQuantity(1);
-		}
-
-		unlocker.clearLocations(bunchOfKeys);
-
-		while(inventory.size() > 0) {
-			inventory.poll().ifPresent(
-					item -> {
-						if(!isUsedKey(item)) {
-							Util.dropItemAt(item, player.getLocation());
-							return;
-						}
-
-						unlocker.addLocation(bunchOfKeys, item);
-						if(item.getQuantity() > 1) {
-							final ItemStack clone = item.copy();
-							clone.setQuantity(item.getQuantity() - 1);
-							Util.dropItemAt(clone, player.getLocation());
-						}
-					}
-			);
-		}
-	}
-
+    init {
+        keyCloneItem.quantity = 2
+    }
 }

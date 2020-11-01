@@ -1,9 +1,9 @@
-package fr.skyost.serialkey.core.listener;
+package fr.skyost.serialkey.core.listener
 
-import fr.skyost.serialkey.core.SerialKeyPlugin;
-import fr.skyost.serialkey.core.item.PluginItemManager;
-import fr.skyost.serialkey.core.padlock.PluginPadlockManager;
-import fr.skyost.serialkey.core.unlocker.PluginUnlocker;
+import fr.skyost.serialkey.core.SerialKeyPlugin
+import fr.skyost.serialkey.core.item.PluginItemManager
+import fr.skyost.serialkey.core.padlock.PluginPadlockManager
+import fr.skyost.serialkey.core.unlocker.PluginUnlocker
 
 /**
  * Represents a SerialKey listener.
@@ -11,65 +11,27 @@ import fr.skyost.serialkey.core.unlocker.PluginUnlocker;
  * @param <I> ItemStack class.
  * @param <L> Location class.
  */
+open class SerialKeyListener<I, L> internal constructor(plugin: SerialKeyPlugin<I, L>) {
+    var plugin: SerialKeyPlugin<I, L> = plugin
+    set(value) {
+        field = value
+        itemManager = plugin.itemManager
+        padlockManager = plugin.padlockManager
+        unlocker = plugin.unlocker
+    }
 
-public class SerialKeyListener<I, L> {
+    /**
+     * The item manager.
+     */
+    protected lateinit var itemManager: PluginItemManager<I>
 
-	/**
-	 * The plugin.
-	 */
+    /**
+     * The padlock manager.
+     */
+    protected lateinit var padlockManager: PluginPadlockManager<I, L>
 
-	protected SerialKeyPlugin plugin;
-
-	/**
-	 * The item manager.
-	 */
-
-	protected PluginItemManager<I> itemManager;
-
-	/**
-	 * The padlock manager.
-	 */
-
-	protected PluginPadlockManager<I, L> padlockManager;
-
-	/**
-	 * The unlocker.
-	 */
-
-	protected PluginUnlocker<I> unlocker;
-
-	/**
-	 * Creates a new SerialKey listener instance.
-	 *
-	 * @param plugin The plugin.
-	 */
-
-	SerialKeyListener(final SerialKeyPlugin<I, L> plugin) {
-		setPlugin(plugin);
-	}
-
-	/**
-	 * Returns the plugin instance.
-	 *
-	 * @return The plugin instance.
-	 */
-
-	public SerialKeyPlugin getPlugin() {
-		return plugin;
-	}
-
-	/**
-	 * Sets the plugin instance.
-	 *
-	 * @param plugin The plugin instance.
-	 */
-
-	public void setPlugin(final SerialKeyPlugin<I, L> plugin) {
-		this.plugin = plugin;
-
-		itemManager = plugin.getItemManager();
-		padlockManager = plugin.getPadlockManager();
-		unlocker = plugin.getUnlocker();
-	}
-
+    /**
+     * The unlocker.
+     */
+    protected lateinit var unlocker: PluginUnlocker<I>
 }

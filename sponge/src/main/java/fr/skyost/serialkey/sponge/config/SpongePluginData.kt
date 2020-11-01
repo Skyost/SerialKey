@@ -1,34 +1,16 @@
-package fr.skyost.serialkey.sponge.config;
+package fr.skyost.serialkey.sponge.config
 
-import fr.skyost.serialkey.core.config.SerialKeyData;
-
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import fr.skyost.serialkey.core.config.SerialKeyData
+import java.nio.file.Path
+import java.util.*
 
 /**
  * The plugin data class.
  */
-
-public class SpongePluginData extends SpongeConfig implements SerialKeyData {
-
-	@ConfigOptions(name = "padlocks")
-	public List<String> padlocks = new ArrayList<>();
-
-	/**
-	 * Creates a new plugin data instance.
-	 *
-	 * @param file The config file.
-	 */
-
-	public SpongePluginData(final Path file) {
-		super(file, "SerialKey Data");
-	}
-
-	@Override
-	public Collection<String> getData() {
-		return padlocks;
-	}
-
+class SpongePluginData(file: Path) : SpongeConfig(file, listOf("SerialKey Data")), SerialKeyData {
+    @ConfigOptions(name = "padlocks")
+    var padlocks: MutableList<String> = ArrayList()
+    override fun getData(): MutableList<String> {
+        return padlocks
+    }
 }

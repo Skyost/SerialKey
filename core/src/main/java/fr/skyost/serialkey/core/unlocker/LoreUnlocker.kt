@@ -1,228 +1,191 @@
-package fr.skyost.serialkey.core.unlocker;
+package fr.skyost.serialkey.core.unlocker
 
-import fr.skyost.serialkey.core.item.ItemManager;
-import fr.skyost.serialkey.core.object.SerialKeyLocation;
-import fr.skyost.serialkey.core.util.ROT47;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
+import fr.skyost.serialkey.core.`object`.SerialKeyLocation
+import fr.skyost.serialkey.core.item.ItemManager
+import fr.skyost.serialkey.core.util.ROT47
+import java.util.*
+import java.util.function.Function
 
 /**
  * Represents an unlocker that depends on items lore.
  *
  * @param <T> ItemStack class.
  */
+abstract class LoreUnlocker<T>(val itemManager: ItemManager<T>) : Unlocker<T> {
+    override fun getLocations(item: T): List<SerialKeyLocation> {
+        return getLocations(item, if (isCipheringEnabled) Function { string: String -> ROT47.rotate(string) } else Function { string: String -> string })
+    }
 
-public abstract class LoreUnlocker<T> implements Unlocker<T> {
+    /**
+     * Returns the locations located in the item lore.
+     *
+     * @param item The item.
+     * @param stringProcessor The string processor.
+     *
+     * @return All locations located in the item lore.
+     */
+    fun getLocations(item: T, stringProcessor: Function<String, String>): List<SerialKeyLocation> {
+        val result: MutableList<SerialKeyLocation> = ArrayList<SerialKeyLocation>()
+        if (!itemManager.isLoreValid(item)) {
+            return result
+        }
+        val lore = itemManager.getLore(item)
+        val n = lore.size
+        var i = 0
+        while (i < n) {
+            result.add(SerialKeyLocation(stringProcessor.apply(lore[i]), stringProcessor.apply(lore[++i])))
+            i++
+        }
+        return result
+    }
 
-	/**
-	 * The item manager.
-	 */
+    override fun canUnlock(item: T?, world: String, position: String): Boolean {
+        return canUnlock(item, world, position, if (isCipheringEnabled) Function { string: String -> ROT47.rotate(string) } else Function { string: String -> string })
+    }
 
-	final ItemManager<T> itemManager;
+    /**
+     * Returns whether the item can unlock the padlock located at the specified location.
+     *
+     * @param item The item.
+     * @param world The world.
+     * @param position The position.
+     * @param stringProcessor The string processor.
+     *
+     * @return Whether the item can unlock the padlock located at the specified location.
+     */
+    protected fun canUnlock(item: T?, world: String, position: String, stringProcessor: Function<String, String>): Boolean {
+        if (itemManager.isMasterKey(item)) {
+            return true
+        }
+        if (!itemManager.isLoreValid(item)) {
+            return false
+        }
+        val lore = itemManager.getLore(item)
+        val n = lore.size
+        var i = 0
+        while (i < n) {
+            if (stringProcessor.apply(lore[i]) == world && stringProcessor.apply(lore[++i]) == position) {
+                return true
+            }
+            i++
+        }
+        return false
+    }
 
-	/**
-	 * Creates a new lore unlocker instance.
-	 *
-	 * @param itemManager The item manager.
-	 */
+    /**
+     * Adds a location to the specified collection item.
+     *
+     * @param collection The collection (bunch of keys for example).
+     * @param item The item.
+     */
+    fun addLocation(collection: T, item: T) {
+        if (!itemManager.isLoreValid(item)) {
+            return
+        }
+        val lore = itemManager.getLore(collection)
+        lore.addAll(itemManager.getLore(item))
+        itemManager.setLore(collection, lore)
+    }
 
-	public LoreUnlocker(final ItemManager<T> itemManager) {
-		this.itemManager = itemManager;
-	}
+    /**
+     * Adds a location to the specified item.
+     *
+     * @param item The item.
+     * @param location The location.
+     */
+    open fun addLocation(item: T, location: SerialKeyLocation) {
+        addLocation(item, location.world!!, location.position)
+    }
 
-	@Override
-	public List<SerialKeyLocation> getLocations(final T item) {
-		return getLocations(item, isCipheringEnabled() ? ROT47::rotate : string -> string);
-	}
+    /**
+     * Adds a location to the specified item.
+     *
+     * @param item The item.
+     * @param world The world.
+     * @param position The position.
+     */
+    protected open fun addLocation(item: T, world: String, position: String) {
+        addLocation(item, world, position, if (isCipheringEnabled) Function { string: String -> ROT47.rotate(string) } else Function { string: String -> string })
+    }
 
-	/**
-	 * Returns the locations located in the item lore.
-	 *
-	 * @param item The item.
-	 * @param stringProcessor The string processor.
-	 *
-	 * @return All locations located in the item lore.
-	 */
+    /**
+     * Adds a location to the specified item.
+     *
+     * @param item The item.
+     * @param world The world.
+     * @param position The position.
+     * @param stringProcessor The string processor.
+     */
+    protected fun addLocation(item: T, world: String, position: String, stringProcessor: Function<String, String>) {
+        val lore = itemManager.getLore(item)
+        lore.add(stringProcessor.apply(world))
+        lore.add(stringProcessor.apply(position))
+        itemManager.setLore(item, lore)
+    }
 
-	public List<SerialKeyLocation> getLocations(final T item, final Function<String, String> stringProcessor) {
-		final List<SerialKeyLocation> result = new ArrayList<>();
-		if(!itemManager.isLoreValid(item)) {
-			return result;
-		}
+    /**
+     * Removes a location from the specified item.
+     *
+     * @param item The item.
+     * @param location The location.
+     */
+    open fun removeLocation(item: T, location: SerialKeyLocation): Short {
+        return removeLocation(item, location.world!!, location.position)
+    }
 
-		final List<String> lore = itemManager.getLore(item);
-		final int n = lore.size();
+    /**
+     * Removes a location from the specified item.
+     *
+     * @param item The item.
+     * @param world The world.
+     * @param position The position.
+     */
+    protected open fun removeLocation(item: T, world: String, position: String): Short {
+        return removeLocation(item, world, position, if (isCipheringEnabled) Function { string: String -> ROT47.rotate(string) } else Function { string: String -> string })
+    }
 
-		for(int i = 0; i < n; i++) {
-			result.add(new SerialKeyLocation(stringProcessor.apply(lore.get(i)), stringProcessor.apply(lore.get(++i))));
-		}
+    /**
+     * Removes a location from the specified item.
+     *
+     * @param item The item.
+     * @param world The world.
+     * @param position The position.
+     * @param stringProcessor The string processor.
+     */
+    protected fun removeLocation(item: T, world: String, position: String, stringProcessor: Function<String, String>): Short {
+        if (!itemManager.isLoreValid(item)) {
+            return 0
+        }
+        val lore = itemManager.getLore(item)
+        var count: Short = 0
+        var i = 0
+        while (i < lore.size) {
+            if (world == stringProcessor.apply(lore[i]) && position == stringProcessor.apply(lore[++i])) {
+                lore.removeAt(i)
+                lore.removeAt(--i)
+                i--
+                count++
+            }
+            i++
+        }
+        itemManager.setLore(item, if (lore.isEmpty()) null else lore)
+        return count
+    }
 
-		return result;
-	}
+    /**
+     * Clears all locations of the specified item.
+     *
+     * @param item The item.
+     */
+    fun clearLocations(item: T) {
+        itemManager.setLore(item, null)
+    }
 
-	@Override
-	public boolean canUnlock(final T item, final String world, final String position) {
-		return canUnlock(item, world, position, isCipheringEnabled() ? ROT47::rotate : string -> string);
-	}
-
-	/**
-	 * Returns whether the item can unlock the padlock located at the specified location.
-	 *
-	 * @param item The item.
-	 * @param world The world.
-	 * @param position The position.
-	 * @param stringProcessor The string processor.
-	 *
-	 * @return Whether the item can unlock the padlock located at the specified location.
-	 */
-
-	protected boolean canUnlock(final T item, final String world, final String position, final Function<String, String> stringProcessor) {
-		if(itemManager.isMasterKey(item)) {
-			return true;
-		}
-
-		if(!itemManager.isLoreValid(item)) {
-			return false;
-		}
-
-		final List<String> lore = itemManager.getLore(item);
-		final int n = lore.size();
-		for(int i = 0; i < n; i++) {
-			if(stringProcessor.apply(lore.get(i)).equals(world) && stringProcessor.apply(lore.get(++i)).equals(position)) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Adds a location to the specified collection item.
-	 *
-	 * @param collection The collection (bunch of keys for example).
-	 * @param item The item.
-	 */
-
-	public void addLocation(final T collection, final T item) {
-		if(!itemManager.isLoreValid(item)) {
-			return;
-		}
-
-		final List<String> lore = itemManager.getLore(collection);
-		lore.addAll(itemManager.getLore(item));
-		itemManager.setLore(collection, lore);
-	}
-
-	/**
-	 * Adds a location to the specified item.
-	 *
-	 * @param item The item.
-	 * @param location The location.
-	 */
-
-	public void addLocation(final T item, final SerialKeyLocation location) {
-		addLocation(item, location.getWorld(), location.getPosition());
-	}
-
-	/**
-	 * Adds a location to the specified item.
-	 *
-	 * @param item The item.
-	 * @param world The world.
-	 * @param position The position.
-	 */
-
-	protected void addLocation(final T item, final String world, final String position) {
-		addLocation(item, world, position, isCipheringEnabled() ? ROT47::rotate : string -> string);
-	}
-
-	/**
-	 * Adds a location to the specified item.
-	 *
-	 * @param item The item.
-	 * @param world The world.
-	 * @param position The position.
-	 * @param stringProcessor The string processor.
-	 */
-
-	protected void addLocation(final T item, final String world, final String position, final Function<String, String> stringProcessor) {
-		final List<String> lore = itemManager.getLore(item);
-		lore.add(stringProcessor.apply(world));
-		lore.add(stringProcessor.apply(position));
-		itemManager.setLore(item, lore);
-	}
-
-	/**
-	 * Removes a location from the specified item.
-	 *
-	 * @param item The item.
-	 * @param location The location.
-	 */
-
-	public short removeLocation(final T item, final SerialKeyLocation location) {
-		return removeLocation(item, location.getWorld(), location.getPosition());
-	}
-
-	/**
-	 * Removes a location from the specified item.
-	 *
-	 * @param item The item.
-	 * @param world The world.
-	 * @param position The position.
-	 */
-
-	protected short removeLocation(final T item, final String world, final String position) {
-		return removeLocation(item, world, position, isCipheringEnabled() ? ROT47::rotate : string -> string);
-	}
-
-	/**
-	 * Removes a location from the specified item.
-	 *
-	 * @param item The item.
-	 * @param world The world.
-	 * @param position The position.
-	 * @param stringProcessor The string processor.
-	 */
-
-	protected short removeLocation(final T item, final String world, final String position, final Function<String, String> stringProcessor) {
-		if(!itemManager.isLoreValid(item)) {
-			return 0;
-		}
-
-		final List<String> lore = itemManager.getLore(item);
-		short count = 0;
-		for(int i = 0; i < lore.size(); i++) {
-			if(world.equals(stringProcessor.apply(lore.get(i))) && position.equals(stringProcessor.apply(lore.get(++i)))) {
-				lore.remove(i);
-				lore.remove(--i);
-				i--;
-
-				count++;
-			}
-		}
-		itemManager.setLore(item, lore.isEmpty() ? null : lore);
-
-		return count;
-	}
-
-	/**
-	 * Clears all locations of the specified item.
-	 *
-	 * @param item The item.
-	 */
-
-	public void clearLocations(final T item) {
-		itemManager.setLore(item, null);
-	}
-
-	/**
-	 * Returns whether ROT47 ciphering should be enabled.
-	 *
-	 * @return Whether ROT47 ciphering should be enabled.
-	 */
-
-	public abstract boolean isCipheringEnabled();
+    /**
+     * Returns whether ROT47 ciphering should be enabled.
+     *
+     * @return Whether ROT47 ciphering should be enabled.
+     */
+    abstract val isCipheringEnabled: Boolean
 
 }

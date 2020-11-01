@@ -1,35 +1,29 @@
-package fr.skyost.serialkey.core.object;
+package fr.skyost.serialkey.core.`object`
 
 /**
  * Represents a person.
  */
+interface SerialKeyPerson {
+    /**
+     * Returns the person identity.
+     *
+     * @return The identity.
+     */
+    val identity: PersonIdentity
 
-public interface SerialKeyPerson {
+    /**
+     * Sends a message to the current person.
+     *
+     * @param message The message.
+     */
+    fun sendMessage(message: String)
 
-	/**
-	 * Returns the person identity.
-	 *
-	 * @return The identity.
-	 */
-
-	PersonIdentity getIdentity();
-
-	/**
-	 * Sends a message to the current person.
-	 *
-	 * @param message The message.
-	 */
-
-	void sendMessage(final String message);
-
-	/**
-	 * Returns whether the person has the specified permission.
-	 *
-	 * @param permission The permission.
-	 *
-	 * @return Whether the person has the specified permission.
-	 */
-
-	boolean hasPermission(final String permission);
-
+    /**
+     * Returns whether the person has the specified permission.
+     *
+     * @param permission The permission.
+     *
+     * @return Whether the person has the specified permission.
+     */
+    fun hasPermission(permission: String): Boolean
 }

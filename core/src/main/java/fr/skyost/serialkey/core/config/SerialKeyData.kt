@@ -1,100 +1,88 @@
-package fr.skyost.serialkey.core.config;
+package fr.skyost.serialkey.core.config
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
-import fr.skyost.serialkey.core.object.SerialKeyLocation;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
+import fr.skyost.serialkey.core.`object`.SerialKeyLocation
+import java.util.*
 
 /**
  * Allows to collect and save padlocks.
  */
+interface SerialKeyData {
+    /**
+     * Returns the raw data.
+     *
+     * @return The raw data.
+     */
+    fun getData(): MutableList<String>
 
-public interface SerialKeyData {
+    /**
+     * Returns the padlocks.
+     *
+     * @return The padlocks.
+     */
 
-	/**
-	 * Returns the raw data.
-	 *
-	 * @return The raw data.
-	 */
+    fun getPadlocks(): HashSet<SerialKeyLocation> {
+        val result: HashSet<SerialKeyLocation> = HashSet<SerialKeyLocation>()
+        for (padlock in getData()) {
+            result.add(locationFromJson(padlock))
+        }
+        return result
+    }
 
-	Collection<String> getData();
+    /**
+     * Adds a padlock.
+     *
+     * @param location The padlock location.
+     */
+    fun addPadlock(location: SerialKeyLocation) {
+        getData().add(locationToJson(location))
+    }
 
-	/**
-	 * Returns the padlocks.
-	 *
-	 * @return The padlocks.
-	 */
+    /**
+     * Removes a padlock.
+     *
+     * @param location The padlock location.
+     *
+     * @return Whether a padlock has been removed.
+     */
+    fun removePadlock(location: SerialKeyLocation): Boolean {
+        val data = getData()
+        for (padlock in ArrayList(data)) {
+            if (locationFromJson(padlock).equals(location)) {
+                data.remove(padlock)
+                return true
+            }
+        }
+        return false
+    }
 
-	default Collection<SerialKeyLocation> getPadlocks() {
-		final HashSet<SerialKeyLocation> result = new HashSet<>();
-		for(final String padlock : getData()) {
-			result.add(locationFromJson(padlock));
-		}
-		return result;
-	}
+    /**
+     * Converts a JSON String to a SerialKey location.
+     *
+     * @param json The JSON String.
+     *
+     * @return The SerialKey location.
+     */
+    fun locationFromJson(json: String): SerialKeyLocation {
+        val representation = JsonParser().parse(json).asJsonObject
+        return SerialKeyLocation(representation["world"].asString, representation["x"].asInt, representation["y"].asInt, representation["z"].asInt)
+    }
 
-	/**
-	 * Adds a padlock.
-	 *
-	 * @param location The padlock location.
-	 */
-
-	default void addPadlock(final SerialKeyLocation location) {
-		getData().add(locationToJson(location));
-	}
-
-	/**
-	 * Removes a padlock.
-	 *
-	 * @param location The padlock location.
-	 *
-	 * @return Whether a padlock has been removed.
-	 */
-
-	default boolean removePadlock(final SerialKeyLocation location) {
-		final Collection<String> data = getData();
-		for(final String padlock : new ArrayList<>(data)) {
-			if(locationFromJson(padlock).equals(location)) {
-				data.remove(padlock);
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Converts a JSON String to a SerialKey location.
-	 *
-	 * @param json The JSON String.
-	 *
-	 * @return The SerialKey location.
-	 */
-
-	default SerialKeyLocation locationFromJson(final String json) {
-		final JsonObject representation = new JsonParser().parse(json).getAsJsonObject();
-		return new SerialKeyLocation(representation.get("world").getAsString(), representation.get("x").getAsInt(), representation.get("y").getAsInt(), representation.get("z").getAsInt());
-	}
-
-	/**
-	 * Converts a SerialKey location to a JSON String.
-	 *
-	 * @param location The SerialKey location.
-	 *
-	 * @return The JSON String.
-	 */
-
-	default String locationToJson(final SerialKeyLocation location) {
-		final JsonObject representation = new JsonObject();
-		representation.add("world", new JsonPrimitive(location.getWorld()));
-		representation.add("x", new JsonPrimitive(location.getX()));
-		representation.add("y", new JsonPrimitive(location.getY()));
-		representation.add("z", new JsonPrimitive(location.getZ()));
-		return representation.toString();
-	}
-
+    /**
+     * Converts a SerialKey location to a JSON String.
+     *
+     * @param location The SerialKey location.
+     *
+     * @return The JSON String.
+     */
+    fun locationToJson(location: SerialKeyLocation): String {
+        val representation = JsonObject()
+        representation.add("world", JsonPrimitive(location.world))
+        representation.add("x", JsonPrimitive(location.x))
+        representation.add("y", JsonPrimitive(location.y))
+        representation.add("z", JsonPrimitive(location.z))
+        return representation.toString()
+    }
 }

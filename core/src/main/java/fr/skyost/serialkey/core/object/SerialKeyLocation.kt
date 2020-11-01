@@ -1,220 +1,120 @@
-package fr.skyost.serialkey.core.object;
+package fr.skyost.serialkey.core.`object`
 
-import java.util.Objects;
+import java.util.*
 
 /**
  * Represents a point in a 3D-Space located by a world and three coordinates.
  */
+class SerialKeyLocation {
+    /**
+     * The world.
+     */
+    val world: String?
 
-public class SerialKeyLocation {
+    /**
+     * X coordinate.
+     */
+    var x: Int
 
-	/**
-	 * The world.
-	 */
+    /**
+     * Y coordinate.
+     */
+    var y: Int
 
-	private String world;
+    /**
+     * Z coordinate.
+     */
+    var z: Int
 
-	/**
-	 * X coordinate.
-	 */
+    /**
+     * Creates a new SerialKey location.
+     *
+     * @param world The world.
+     * @param position The String position (<q>x, y, z</q>).
+     */
+    constructor(world: String, position: String) {
+        this.world = world
+        val rawLocation = position.split(", ").toTypedArray()
+        x = rawLocation[0].toInt()
+        y = rawLocation[1].toInt()
+        z = rawLocation[2].toInt()
+    }
 
-	private int x;
+    /**
+     * Creates a new SerialKey location.
+     *
+     * @param world The world.
+     * @param x The X coordinate.
+     * @param y The Y coordinate.
+     * @param z The Z coordinate.
+     */
+    constructor(world: String?, x: Int, y: Int, z: Int) {
+        this.world = world
+        this.x = x
+        this.y = y
+        this.z = z
+    }
 
-	/**
-	 * Y coordinate.
-	 */
+    /**
+     * Returns the position (<q>x, y, z</q>).
+     *
+     * @return The position.
+     */
+    val position: String
+        get() = "$x, $y, $z"
 
-	private int y;
+    /**
+     * Returns a location where its coordinates are (<pre>this.x + location.x</pre>, <pre>this.y + location.y</pre>, <pre>this.z + location.z</pre>)
+     * where (<pre>this.x</pre>, <pre>this.y</pre>, <pre>this.z</pre>) are the coordinates of this location
+     * and (<pre>location.x</pre>, <pre>location.y</pre>, <pre>location.z</pre>) are the coordinates of the specified location.
+     *
+     * @param location The location.
+     *
+     * @return The calculated location.
+     */
+    fun getRelative(location: SerialKeyLocation): SerialKeyLocation {
+        return getRelative(location.x, location.y, location.z)
+    }
 
-	/**
-	 * Z coordinate.
-	 */
+    /**
+     * Returns a location where its coordinates are (<pre>this.x + x</pre>, <pre>this.y + y</pre>, <pre>this.z + z</pre>)
+     * where (<pre>this.x</pre>, <pre>this.y</pre>, <pre>this.z</pre>) are the coordinates of this location
+     * and (<pre>x</pre>, <pre>y</pre>, <pre>z</pre>) are the specified coordinates.
+     *
+     * @param x The X.
+     * @param y The Y.
+     * @param z The Z.
+     *
+     * @return The calculated location.
+     */
+    fun getRelative(x: Int, y: Int, z: Int): SerialKeyLocation {
+        return SerialKeyLocation(world, this.x + x, this.y + y, this.z + z)
+    }
 
-	private int z;
+    /**
+     * Creates a copy of the current location.
+     *
+     * @return The copy.
+     */
+    fun copy(): SerialKeyLocation {
+        return SerialKeyLocation(world, x, y, z)
+    }
 
-	/**
-	 * Creates a new SerialKey location.
-	 *
-	 * @param world The world.
-	 * @param position The String position (<q>x, y, z</q>).
-	 */
+    override fun toString(): String {
+        return "{\"" + world?.replace("\"", "\\\"") + "\", " + position + "}"
+    }
 
-	public SerialKeyLocation(final String world, final String position) {
-		this.world = world;
+    override fun hashCode(): Int {
+        return Objects.hash(world, x, y, z)
+    }
 
-		final String[] rawLocation = position.split(", ");
-		x = Integer.parseInt(rawLocation[0]);
-		y = Integer.parseInt(rawLocation[1]);
-		z = Integer.parseInt(rawLocation[2]);
-	}
+    fun equals(location: SerialKeyLocation): Boolean {
+        return world == location.world && x == location.x && y == location.y && z == location.z
+    }
 
-	/**
-	 * Creates a new SerialKey location.
-	 *
-	 * @param world The world.
-	 * @param x The X coordinate.
-	 * @param y The Y coordinate.
-	 * @param z The Z coordinate.
-	 */
-
-	public SerialKeyLocation(final String world, final int x, final int y, final int z) {
-		this.world = world;
-		this.x = x;
-		this.y = y;
-		this.z = z;
-	}
-
-	/**
-	 * Returns the world name.
-	 *
-	 * @return The world name.
-	 */
-
-	public String getWorld() {
-		return world;
-	}
-
-	/**
-	 * Sets the world name.
-	 *
-	 * @param world The world name.
-	 */
-
-	public void setWorld(final String world) {
-		this.world = world;
-	}
-
-	/**
-	 * Returns the X coordinate.
-	 *
-	 * @return The X coordinate.
-	 */
-
-	public int getX() {
-		return x;
-	}
-
-	/**
-	 * Sets the X coordinate.
-	 *
-	 * @param x The X coordinate.
-	 */
-
-	public void setX(final int x) {
-		this.x = x;
-	}
-
-	/**
-	 * Returns the Y coordinate.
-	 *
-	 * @return The Y coordinate.
-	 */
-
-	public int getY() {
-		return y;
-	}
-
-	/**
-	 * Sets the Y coordinate.
-	 *
-	 * @param y The Y coordinate.
-	 */
-
-	public void setY(final int y) {
-		this.y = y;
-	}
-
-	/**
-	 * Returns the Z coordinate.
-	 *
-	 * @return The Z coordinate.
-	 */
-
-	public int getZ() {
-		return z;
-	}
-
-	/**
-	 * Sets the Z coordinate.
-	 *
-	 * @param z The Z coordinate.
-	 */
-
-	public void setZ(final int z) {
-		this.z = z;
-	}
-
-	/**
-	 * Returns the position (<q>x, y, z</q>).
-	 *
-	 * @return The position.
-	 */
-
-	public String getPosition() {
-		return x + ", " + y + ", " + z;
-	}
-
-	/**
-	 * Returns a location where its coordinates are (<pre>this.x + location.x</pre>, <pre>this.y + location.y</pre>, <pre>this.z + location.z</pre>)
-	 * where (<pre>this.x</pre>, <pre>this.y</pre>, <pre>this.z</pre>) are the coordinates of this location
-	 * and (<pre>location.x</pre>, <pre>location.y</pre>, <pre>location.z</pre>) are the coordinates of the specified location.
-	 *
-	 * @param location The location.
-	 *
-	 * @return The calculated location.
-	 */
-
-	public SerialKeyLocation getRelative(final SerialKeyLocation location) {
-		return getRelative(location.x, location.y, location.z);
-	}
-
-	/**
-	 * Returns a location where its coordinates are (<pre>this.x + x</pre>, <pre>this.y + y</pre>, <pre>this.z + z</pre>)
-	 * where (<pre>this.x</pre>, <pre>this.y</pre>, <pre>this.z</pre>) are the coordinates of this location
-	 * and (<pre>x</pre>, <pre>y</pre>, <pre>z</pre>) are the specified coordinates.
-	 *
-	 * @param x The X.
-	 * @param y The Y.
-	 * @param z The Z.
-	 *
-	 * @return The calculated location.
-	 */
-
-	public SerialKeyLocation getRelative(final int x, final int y, final int z) {
-		return new SerialKeyLocation(world, this.x + x, this.y + y, this.z + z);
-	}
-
-	/**
-	 * Creates a copy of the current location.
-	 *
-	 * @return The copy.
-	 */
-
-	public SerialKeyLocation copy() {
-		return new SerialKeyLocation(world, x, y, z);
-	}
-
-	@Override
-	public String toString() {
-		return "{\"" + world.replace("\"", "\\\"") + "\", " + getPosition() + "}";
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(world, x, y ,z);
-	}
-
-	public boolean equals(final SerialKeyLocation location) {
-		return world.equals(location.world) && x == location.x && y == location.y && z == location.z;
-	}
-
-	@Override
-	public boolean equals(final Object object) {
-		if(object instanceof SerialKeyLocation) {
-			return equals((SerialKeyLocation)object);
-		}
-
-		return super.equals(object);
-	}
-
+    override fun equals(other: Any?): Boolean {
+        return if (other is SerialKeyLocation) {
+            equals(other)
+        } else super.equals(other)
+    }
 }

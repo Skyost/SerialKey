@@ -1,34 +1,20 @@
-package fr.skyost.serialkey.sponge.unlocker;
+package fr.skyost.serialkey.sponge.unlocker
 
-import fr.skyost.serialkey.core.unlocker.PluginUnlocker;
-import fr.skyost.serialkey.sponge.SerialKey;
-import fr.skyost.serialkey.sponge.util.Util;
-import org.spongepowered.api.item.inventory.ItemStack;
+import fr.skyost.serialkey.core.unlocker.PluginUnlocker
+import fr.skyost.serialkey.sponge.SerialKey
+import fr.skyost.serialkey.sponge.util.Util
+import fr.skyost.serialkey.sponge.util.Util.randomTextColor
+import org.spongepowered.api.item.inventory.ItemStack
 
 /**
  * The Sponge unlocker class.
  */
+class SpongeUnlocker(plugin: SerialKey) : PluginUnlocker<ItemStack>(plugin) {
+    override fun randomColor(): String {
+        return randomTextColor()
+    }
 
-public class SpongeUnlocker extends PluginUnlocker<ItemStack> {
-
-	/**
-	 * Creates a new Sponge unlocker instance.
-	 *
-	 * @param plugin The plugin instance.
-	 */
-
-	public SpongeUnlocker(final SerialKey plugin) {
-		super(plugin);
-	}
-
-	@Override
-	protected String randomColor() {
-		return Util.randomTextColor();
-	}
-
-	@Override
-	protected String stripColor(final String string) {
-		return Util.stripColor(string);
-	}
-
+    override fun stripColor(string: String): String {
+        return Util.stripColor(string)
+    }
 }

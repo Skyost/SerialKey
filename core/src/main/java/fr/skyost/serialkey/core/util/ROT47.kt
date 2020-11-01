@@ -1,33 +1,30 @@
-package fr.skyost.serialkey.core.util;
+package fr.skyost.serialkey.core.util
 
 /**
- * <a href="https://en.wikipedia.org/wiki/ROT13#Variants">ROT47</a> algorithm implementation.
+ * [ROT47](https://en.wikipedia.org/wiki/ROT13#Variants) algorithm implementation.
  */
-
-public class ROT47 {
-
-	/**
-	 * Rotates a string.
-	 *
-	 * @param value The string.
-	 *
-	 * @return The rotated string.
-	 */
-	
-	public static String rotate(final String value) {
-		final StringBuilder result = new StringBuilder();
-		final int n = value.length();
-		for(int i = 0; i < n; i++) {
-			char c = value.charAt(i);
-			if(c != ' ') {
-				c += 47;
-				if(c > '~') {
-					c -= 94;
-				}
-			}
-			result.append(c);
-		}
-		return result.toString();
-	}
-	
+object ROT47 {
+    /**
+     * Rotates a string.
+     *
+     * @param value The string.
+     *
+     * @return The rotated string.
+     */
+	@JvmStatic
+	fun rotate(value: String): String {
+        val result = StringBuilder()
+        val n = value.length
+        for (i in 0 until n) {
+            var c: Char = value[i]
+            if (c != ' ') {
+                c += 47
+                if (c > '~') {
+                    c -= 94
+                }
+            }
+            result.append(c)
+        }
+        return result.toString()
+    }
 }

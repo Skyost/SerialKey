@@ -1,172 +1,127 @@
-package fr.skyost.serialkey.bukkit;
+package fr.skyost.serialkey.bukkit
 
-import fr.skyost.serialkey.bukkit.command.BukkitGetKeyCommand;
-import fr.skyost.serialkey.bukkit.config.BukkitPluginConfig;
-import fr.skyost.serialkey.bukkit.config.BukkitPluginData;
-import fr.skyost.serialkey.bukkit.config.BukkitPluginMessages;
-import fr.skyost.serialkey.bukkit.item.BukkitItemManager;
-import fr.skyost.serialkey.bukkit.listener.*;
-import fr.skyost.serialkey.bukkit.padlock.BukkitPadlockManager;
-import fr.skyost.serialkey.bukkit.unlocker.BukkitUnlocker;
-import fr.skyost.serialkey.bukkit.util.Skyupdater;
-import fr.skyost.serialkey.core.SerialKeyPlugin;
-import org.bstats.bukkit.MetricsLite;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.PluginCommand;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.java.JavaPlugin;
-
-import java.io.File;
+import fr.skyost.serialkey.bukkit.command.BukkitGetKeyCommand
+import fr.skyost.serialkey.bukkit.config.BukkitPluginConfig
+import fr.skyost.serialkey.bukkit.config.BukkitPluginData
+import fr.skyost.serialkey.bukkit.config.BukkitPluginMessages
+import fr.skyost.serialkey.bukkit.item.BukkitItemManager
+import fr.skyost.serialkey.bukkit.listener.*
+import fr.skyost.serialkey.bukkit.padlock.BukkitPadlockManager
+import fr.skyost.serialkey.bukkit.unlocker.BukkitUnlocker
+import fr.skyost.serialkey.bukkit.util.Skyupdater
+import fr.skyost.serialkey.core.SerialKeyPlugin
+import org.bstats.bukkit.MetricsLite
+import org.bukkit.Bukkit
+import org.bukkit.ChatColor
+import org.bukkit.Location
+import org.bukkit.command.CommandSender
+import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.Recipe
+import org.bukkit.plugin.java.JavaPlugin
 
 /**
  * The SerialKey plugin class.
  */
+class SerialKey : JavaPlugin(), SerialKeyPlugin<ItemStack, Location> {
+    /**
+     * The plugin config.
+     */
+    override lateinit var pluginConfig: BukkitPluginConfig
 
-public class SerialKey extends JavaPlugin implements SerialKeyPlugin<ItemStack, Location> {
+    /**
+     * The plugin messages.
+     */
+    override lateinit var pluginMessages: BukkitPluginMessages
 
-	/**
-	 * The plugin config.
-	 */
-	
-	private BukkitPluginConfig config;
+    /**
+     * The item manager.
+     */
+    override val itemManager: BukkitItemManager = BukkitItemManager(this)
 
-	/**
-	 * The plugin messages.
-	 */
+    /**
+     * The unlocker.
+     */
+    override val unlocker: BukkitUnlocker = BukkitUnlocker(this)
 
-	private BukkitPluginMessages messages;
+    /**
+     * The padlock manager.
+     */
+    override val padlockManager: BukkitPadlockManager = BukkitPadlockManager(this)
 
-	/**
-	 * The item manager.
-	 */
+    init {
+        pluginConfig = BukkitPluginConfig(dataFolder)
+        pluginMessages = BukkitPluginMessages(dataFolder)
+    }
 
-	private BukkitItemManager itemManager;
+    override fun onEnable() {
+        try {
+            val dataFolder = dataFolder
 
-	/**
-	 * The unlocker.
-	 */
+            // Configuration :
+            pluginConfig = BukkitPluginConfig(dataFolder)
+            pluginConfig.load()
+            pluginMessages = BukkitPluginMessages(dataFolder)
+            pluginMessages.load()
+            val data = BukkitPluginData(dataFolder)
+            data.load()
 
-	private BukkitUnlocker unlocker;
+            // Core object :
+            itemManager.createRecipes<Recipe>(Bukkit::addRecipe)
+            padlockManager.load(data)
 
-	/**
-	 * The padlock manager.
-	 */
+            // Events :
+            val manager = Bukkit.getPluginManager()
+            manager.registerEvents(BukkitGlobalListener(this), this)
+            manager.registerEvents(BukkitBlocksListener(this), this)
+            manager.registerEvents(BukkitBunchOfKeysListener(this), this)
+            manager.registerEvents(BukkitPadlockFinderListener(this), this)
+            if (!pluginConfig.canRenameItems) {
+                manager.registerEvents(BukkitAnvilListener(this), this)
+            }
+            if (pluginConfig.disableHoppers) {
+                manager.registerEvents(BukkitHopperListener(this), this)
+            }
+            if (!pluginConfig.allowLostChests) {
+                manager.registerEvents(BukkitLostChestsListener(this), this)
+            }
 
-	private BukkitPadlockManager padlockManager;
-	
-	@Override
-	public final void onEnable() {
-		try {
-			final File dataFolder = this.getDataFolder();
-			
-			// Configuration :
-			
-			config = new BukkitPluginConfig(dataFolder);
-			config.load();
-			messages = new BukkitPluginMessages(dataFolder);
-			messages.load();
-			final BukkitPluginData data = new BukkitPluginData(dataFolder);
-			data.load();
+            // Commands :
+            val executor = BukkitGetKeyCommand(this)
+            val command = getCommand("serialkey")
+            command!!.usage = executor.usage
+            command.setExecutor(executor)
 
-			// Core object :
+            // Services :
+            if (pluginConfig.enableUpdater) {
+                Skyupdater(this, 84423, file, true, true)
+            }
+            if (pluginConfig.enableMetrics) {
+                MetricsLite(this, 60)
+            }
+        } catch (ex: NullPointerException) {
+            sendMessage(Bukkit.getConsoleSender(), ChatColor.RED.toString() + "Null pointer exception ! Maybe you have misconfigured one (or more) item recipe.")
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+        }
+    }
 
-			itemManager = new BukkitItemManager(this);
-			itemManager.createRecipes();
-			unlocker = new BukkitUnlocker(this);
-			padlockManager = new BukkitPadlockManager(this);
-			padlockManager.load(data);
+    override fun onDisable() {
+        try {
+            val data = BukkitPluginData(dataFolder)
+            padlockManager.save(data)
+            data.save()
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+        }
+    }
 
-			// Events :
-			
-			final PluginManager manager = Bukkit.getPluginManager();
-			manager.registerEvents(new BukkitGlobalListener(this), this);
-			manager.registerEvents(new BukkitBlocksListener(this), this);
-			manager.registerEvents(new BukkitBunchOfKeysListener(this), this);
-			manager.registerEvents(new BukkitPadlockFinderListener(this), this);
-			if(!config.canRenameItems) {
-				manager.registerEvents(new BukkitAnvilListener(this), this);
-			}
-			if(config.disableHoppers) {
-				manager.registerEvents(new BukkitHopperListener(this), this);
-			}
-			if(!config.allowLostChests) {
-				manager.registerEvents(new BukkitLostChestsListener(this), this);
-			}
-			
-			// Commands :
-			
-			final BukkitGetKeyCommand executor = new BukkitGetKeyCommand(this);
-			final PluginCommand command = this.getCommand("serialkey");
-			command.setUsage(executor.getUsage());
-			command.setExecutor(executor);
-			
-			// Services :
-			
-			if(config.enableUpdater) {
-				new Skyupdater(this, 84423, this.getFile(), true, true);
-			}
-			if(config.enableMetrics) {
-				new MetricsLite(this);
-			}
-		}
-		catch(final NullPointerException ex) {
-			sendMessage(Bukkit.getConsoleSender(), ChatColor.RED + "Null pointer exception ! Maybe you have misconfigured one (or more) item recipe.");
-		}
-		catch(final Exception ex) {
-			ex.printStackTrace();
-		}
-	}
-	
-	@Override
-	public final void onDisable() {
-		try {
-			final BukkitPluginData data = new BukkitPluginData(getDataFolder());
-			padlockManager.save(data);
-			data.save();
-		}
-		catch(final Exception ex) {
-			ex.printStackTrace();
-		}
-	}
-
-	@Override
-	public BukkitItemManager getItemManager() {
-		return itemManager;
-	}
-
-	@Override
-	public BukkitUnlocker getUnlocker() {
-		return unlocker;
-	}
-
-	@Override
-	public BukkitPadlockManager getPadlockManager() {
-		return padlockManager;
-	}
-
-	@Override
-	public BukkitPluginConfig getPluginConfig() {
-		return config;
-	}
-
-	@Override
-	public BukkitPluginMessages getPluginMessages() {
-		return messages;
-	}
-
-	/**
-	 * Sends a message with the plugin prefix.
-	 *
-	 * @param sender Who receives the message.
-	 * @param message The message.
-	 */
-
-	public void sendMessage(final CommandSender sender, final String message) {
-		sender.sendMessage(messages.prefix + " " + message);
-	}
-	
+    /**
+     * Sends a message with the plugin prefix.
+     *
+     * @param sender Who receives the message.
+     * @param message The message.
+     */
+    private fun sendMessage(sender: CommandSender, message: String) {
+        sender.sendMessage(pluginMessages.prefix + " " + message)
+    }
 }

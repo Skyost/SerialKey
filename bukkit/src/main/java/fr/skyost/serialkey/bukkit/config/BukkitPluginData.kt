@@ -1,36 +1,17 @@
-package fr.skyost.serialkey.bukkit.config;
+package fr.skyost.serialkey.bukkit.config
 
-import fr.skyost.serialkey.bukkit.util.Skyoconfig;
-import fr.skyost.serialkey.core.config.SerialKeyData;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import fr.skyost.serialkey.bukkit.util.Skyoconfig
+import fr.skyost.serialkey.core.config.SerialKeyData
+import java.io.File
+import java.util.*
 
 /**
  * The plugin data class.
  */
-
-public class BukkitPluginData extends Skyoconfig implements SerialKeyData {
-
-	@ConfigOptions(name = "padlocks")
-	public List<String> padlocks = new ArrayList<>();
-
-	/**
-	 * Creates a new plugin data instance.
-	 *
-	 * @param dataFolder The plugin data folder.
-	 */
-	
-	public BukkitPluginData(final File dataFolder) {
-		super(new File(dataFolder, "data.yml"), Collections.singletonList("SerialKey Data"));
-	}
-
-	@Override
-	public Collection<String> getData() {
-		return padlocks;
-	}
-
+class BukkitPluginData(dataFolder: File) : Skyoconfig(File(dataFolder, "data.yml"), listOf("SerialKey Data")), SerialKeyData {
+    @ConfigOptions(name = "padlocks")
+    var padlocks: MutableList<String> = ArrayList()
+    override fun getData(): MutableList<String> {
+        return padlocks
+    }
 }

@@ -1,87 +1,72 @@
-package fr.skyost.serialkey.core.config;
-
-import java.util.List;
-import java.util.Map;
+package fr.skyost.serialkey.core.config
 
 /**
  * Represents a SerialKey configuration.
  */
+interface SerialKeyConfig {
+    /**
+     * Whether keys are reusable or not.
+     *
+     * @return **true** Yes.
+     * <br></br>**false** Otherwise.
+     */
+    val reusableKeys: Boolean
 
-public interface SerialKeyConfig {
+    /**
+     * Whether lores are encrypted or not.
+     *
+     * @return **true** Yes.
+     * <br></br>**false** Otherwise.
+     */
+    val encryptLore: Boolean
 
-	/**
-	 * Whether keys are reusable or not.
-	 *
-	 * @return <b>true</b> Yes.
-	 * <br><b>false</b> Otherwise.
-	 */
+    /**
+     * Whether players can rename items or not.
+     *
+     * @return **true** Yes.
+     * <br></br>**false** Otherwise.
+     */
+    val canRenameItems: Boolean
 
-	boolean areKeysReusable();
+    /**
+     * The key shape.
+     *
+     * @return The key shape.
+     */
+    val keyShape: List<String>
 
-	/**
-	 * Whether lores are encrypted or not.
-	 *
-	 * @return <b>true</b> Yes.
-	 * <br><b>false</b> Otherwise.
-	 */
+    /**
+     * The master key shape.
+     *
+     * @return The master key shape.
+     */
+    val masterKeyShape: List<String>
 
-	boolean areLoresEncrypted();
+    /**
+     * The bunch of keys shape.
+     *
+     * @return The bunch of keys shape.
+     */
+    val bunchOfKeysShape: List<String>
 
-	/**
-	 * Whether players can rename items or not.
-	 *
-	 * @return <b>true</b> Yes.
-	 * <br><b>false</b> Otherwise.
-	 */
+    /**
+     * Returns the shape materials.
+     *
+     * @return The shape materials.
+     */
+    val shapeMaterials: Map<String, String>
 
-	boolean canRenameItems();
+    /**
+     * Returns the key material ID.
+     *
+     * @return The key material ID.
+     */
+    fun getKeyMaterialID(): String
 
-	/**
-	 * The key shape.
-	 *
-	 * @return The key shape.
-	 */
-
-	List<String> getKeyShape();
-
-	/**
-	 * The master key shape.
-	 *
-	 * @return The master key shape.
-	 */
-
-	List<String> getMasterKeyShape();
-
-	/**
-	 * The bunch of keys shape.
-	 *
-	 * @return The bunch of keys shape.
-	 */
-
-	List<String> getBunchOfKeysShape();
-
-	/**
-	 * Returns the shape materials.
-	 *
-	 * @return The shape materials.
-	 */
-
-	Map<String, String> getShapeMaterials();
-
-	/**
-	 * Returns the key material ID.
-	 *
-	 * @return The key material ID.
-	 */
-
-	String getKeyMaterialID();
-
-	/**
-	 * Returns the padlock finder material ID.
-	 *
-	 * @return The padlock finder material ID.
-	 */
-
-	String getPadlockFinderMaterialID();
-
+    /**
+     * Returns the padlock finder material ID.
+     *
+     * @return The padlock finder material ID.
+     */
+    fun getPadlockFinderMaterialID(): String
 }

@@ -1,149 +1,109 @@
-package fr.skyost.serialkey.bukkit.item;
+package fr.skyost.serialkey.bukkit.item
 
-import fr.skyost.serialkey.bukkit.SerialKey;
-import fr.skyost.serialkey.bukkit.config.BukkitPluginConfig;
-import fr.skyost.serialkey.bukkit.util.Util;
-import fr.skyost.serialkey.core.item.PluginItemManager;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.InventoryEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryView;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.inventory.meta.ItemMeta;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import fr.skyost.serialkey.bukkit.SerialKey
+import fr.skyost.serialkey.bukkit.config.BukkitPluginConfig
+import fr.skyost.serialkey.bukkit.util.Util
+import fr.skyost.serialkey.core.item.PluginItemManager
+import fr.skyost.serialkey.core.util.Util.keepAll
+import org.bukkit.Bukkit
+import org.bukkit.Material
+import org.bukkit.NamespacedKey
+import org.bukkit.entity.Player
+import org.bukkit.event.inventory.InventoryEvent
+import org.bukkit.inventory.Inventory
+import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.ShapedRecipe
+import java.util.*
+import java.util.function.Function
 
 /**
  * The Bukkit item manager class.
  */
+class BukkitItemManager private constructor(private val plugin: SerialKey, config: BukkitPluginConfig, key: ItemStack) : PluginItemManager<ItemStack>(plugin.pluginConfig, key, Util.createItem(config.masterKeyName, config.masterKeyMaterial), key.clone(), Util.createItem(config.bunchOfKeysName, config.bunchOfKeysMaterial), Util.createItem(config.padlockFinderName, Material.COMPASS)) {
+    /**
+     * Creates a new Bukkit item manager instance.
+     *
+     * @param plugin The plugin instance.
+     */
+    constructor(plugin: SerialKey) : this(plugin, plugin.pluginConfig, Util.createItem(plugin.pluginConfig.keyName, plugin.pluginConfig.keyMaterial))
 
-public class BukkitItemManager extends PluginItemManager<ItemStack> {
+    init {
+        keyCloneItem.amount = 2
+    }
 
-	/**
-	 * The plugin instance.
-	 */
+    override fun <R> createRecipe(id: String, result: ItemStack, shape: List<String>, ingredients: Map<String, String>, register: Function<R, Unit>) {
+        var ingredientsMap = ingredients
+        val recipe = ShapedRecipe(NamespacedKey(plugin, id), result)
+        recipe.shape(*shape.toTypedArray())
+        if (ingredientsMap == config.shapeMaterials) {
+            ingredientsMap = keepAll(ingredients, shape)
+        }
+        for ((key, value) in ingredientsMap) {
+            recipe.setIngredient(key[0], Material.valueOf(value))
+        }
+        register.apply(recipe as R)
+    }
 
-	private final SerialKey plugin;
+    override fun isItemValid(item: ItemStack?): Boolean {
+        return item != null && (item.itemMeta?.hasDisplayName() ?: false)
+    }
 
-	/**
-	 * Creates a new Bukkit item manager instance.
-	 *
-	 * @param plugin The plugin instance.
-	 */
+    override fun compareItemsName(item1: ItemStack, item2: ItemStack): Boolean {
+        return item1.itemMeta!!.displayName == item2.itemMeta!!.displayName
+    }
 
-	public BukkitItemManager(final SerialKey plugin) {
-		this(plugin, plugin.getPluginConfig(), Util.createItem(plugin.getPluginConfig().keyName, plugin.getPluginConfig().keyMaterial));
-	}
+    override fun compareItemsType(item1: ItemStack, item2: ItemStack): Boolean {
+        return item1.type == item2.type
+    }
 
-	/**
-	 * Creates a new Bukkit item manager instance.
-	 *
-	 * @param plugin The plugin instance.
-	 * @param key The key item.
-	 */
+    override fun getLore(`object`: ItemStack?): MutableList<String> {
+        val meta = `object`?.itemMeta ?: return ArrayList()
+        val lore = meta.lore
+        return lore ?: ArrayList()
+    }
 
-	private BukkitItemManager(final SerialKey plugin, final BukkitPluginConfig config, final ItemStack key) {
-		super(plugin.getPluginConfig(), key, Util.createItem(config.masterKeyName, config.masterKeyMaterial), key.clone(), Util.createItem(config.bunchOfKeysName, config.bunchOfKeysMaterial), Util.createItem(config.padlockFinderName, Material.COMPASS));
+    override fun setLore(`object`: ItemStack, lore: List<String>?) {
+        val meta = `object`.itemMeta
+        meta!!.lore = lore
+        `object`.itemMeta = meta
+    }
 
-		this.plugin = plugin;
-		getKeyCloneItem().setAmount(2);
-	}
+    /**
+     * Checks if the specified inventory is a bunch of keys (blank or used).
+     *
+     * @param event The inventory event.
+     *
+     * @return **true :** yes.
+     * <br></br>**false :** no.
+     */
+    fun isBunchOfKeys(event: InventoryEvent): Boolean {
+        return event.view.title == bunchOfKeysItem.itemMeta!!.displayName && event.inventory.size == 9
+    }
 
-	@Override
-	public void createRecipe(final String id, final ItemStack result, final List<String> shape, Map<String, String> ingredients) {
-		final ShapedRecipe recipe = new ShapedRecipe(new NamespacedKey(plugin, id), result);
-		recipe.shape(shape.toArray(new String[0]));
-		if(ingredients.equals(config.getShapeMaterials())) {
-			ingredients = fr.skyost.serialkey.core.util.Util.keepAll(ingredients, shape);
-		}
-		for(final Map.Entry<String, String> entry : ingredients.entrySet()) {
-			recipe.setIngredient(entry.getKey().charAt(0), Material.valueOf(entry.getValue()));
-		}
-		Bukkit.addRecipe(recipe);
-	}
+    /**
+     * Creates an inventory for the specified bunch of keys and opens it for the specified players.
+     *
+     * @param bunchOfKeys The bunch of keys item.
+     * @param players The players.
+     *
+     * @return The inventory.
+     */
+    fun createInventory(bunchOfKeys: ItemStack, vararg players: Player): Inventory {
+        val inventory = Bukkit.createInventory(null, 9, bunchOfKeys.itemMeta!!.displayName)
+        inventory.maxStackSize = 1
+        val lore: List<String> = getLore(bunchOfKeys)
+        val n = lore.size
+        var i = 0
+        while (i < n) {
+            val key = keyItem.clone()
+            val meta = key.itemMeta
+            meta!!.lore = listOf(lore[i], lore[++i])
+            key.itemMeta = meta
+            inventory.addItem(key)
+            i++
+        }
 
-	@Override
-	protected boolean isItemValid(final ItemStack item) {
-		return item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName();
-	}
-
-	@Override
-	protected boolean compareItemsName(final ItemStack item1, final ItemStack item2) {
-		return item1.getItemMeta().getDisplayName().equals(item2.getItemMeta().getDisplayName());
-	}
-
-	@Override
-	protected boolean compareItemsType(final ItemStack item1, final ItemStack item2) {
-		return item1.getType() == item2.getType();
-	}
-
-	@Override
-	public List<String> getLore(final ItemStack object) {
-		if(object == null) {
-			return new ArrayList<>();
-		}
-
-		final ItemMeta meta = object.getItemMeta();
-		if(meta == null) {
-			return new ArrayList<>();
-		}
-
-		final List<String> lore = meta.getLore();
-		return lore == null ? new ArrayList<>() : lore;
-	}
-
-	@Override
-	public void setLore(final ItemStack object, final List<String> lore) {
-		final ItemMeta meta = object.getItemMeta();
-		meta.setLore(lore);
-		object.setItemMeta(meta);
-	}
-
-	/**
-	 * Checks if the specified inventory is a bunch of keys (blank or used).
-	 *
-	 * @param event The inventory event.
-	 *
-	 * @return <b>true :</b> yes.
-	 * <br><b>false :</b> no.
-	 */
-
-	public boolean isBunchOfKeys(final InventoryEvent event) {
-		final ItemStack bunchOfKeys = getBunchOfKeysItem();
-		return event.getView().getTitle().equals(bunchOfKeys.getItemMeta().getDisplayName()) && event.getInventory().getSize() == 9;
-	}
-
-	/**
-	 * Creates an inventory for the specified bunch of keys and opens it for the specified players.
-	 *
-	 * @param bunchOfKeys The bunch of keys item.
-	 * @param players The players.
-	 *
-	 * @return The inventory.
-	 */
-
-	public Inventory createInventory(final ItemStack bunchOfKeys, final Player... players) {
-		final Inventory inventory = Bukkit.createInventory(null, 9, bunchOfKeys.getItemMeta().getDisplayName());
-		inventory.setMaxStackSize(1);
-
-		final List<String> lore = getLore(bunchOfKeys);
-		final int n = lore.size();
-		for(int i = 0; i < n; i++) {
-			final ItemStack key = getKeyItem().clone();
-			final ItemMeta meta = key.getItemMeta();
-			meta.setLore(Arrays.asList(lore.get(i), lore.get(++i)));
-			key.setItemMeta(meta);
-			inventory.addItem(key);
-		}
-
-		/*final List<SerialKeyLocation> locations = unlocker.getLocations(bunchOfKeys);
+        /*final List<SerialKeyLocation> locations = unlocker.getLocations(bunchOfKeys);
 		if(!locations.isEmpty()) {
 			for(final SerialKeyLocation object : locations) {
 				final ItemStack key = getKeyItem().clone();
@@ -152,13 +112,9 @@ public class BukkitItemManager extends PluginItemManager<ItemStack> {
 			}
 		}*/
 
-		if(players != null) {
-			for(final Player player : players) {
-				player.openInventory(inventory);
-			}
-		}
-
-		return inventory;
-	}
-
+        for (player in players) {
+            player.openInventory(inventory)
+        }
+        return inventory
+    }
 }

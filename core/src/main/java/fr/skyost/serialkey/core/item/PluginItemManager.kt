@@ -1,176 +1,132 @@
-package fr.skyost.serialkey.core.item;
+package fr.skyost.serialkey.core.item
 
-import fr.skyost.serialkey.core.config.SerialKeyConfig;
-import fr.skyost.serialkey.core.util.Util;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import fr.skyost.serialkey.core.config.SerialKeyConfig
+import fr.skyost.serialkey.core.util.Util.createMap
+import java.util.function.Function
 
 /**
  * An item manager that depends on a plugin.
  *
  * @param <T> ItemStack class.
  */
+abstract class PluginItemManager<T>(protected val config: SerialKeyConfig, key: T, masterKey: T, keyClone: T, bunchOfKeys: T, padlockFinder: T) : ItemManager<T>(key, masterKey, keyClone, bunchOfKeys, padlockFinder) {
+    /**
+     * Creates all required recipes.
+     */
+    fun <R> createRecipes(register: Function<R, Unit>) {
+        createRecipe(KEY_RECIPE_ID, keyItem, config.keyShape, register)
+        createRecipe(MASTER_KEY_RECIPE_ID, masterKeyItem, config.masterKeyShape, register)
+        createRecipe(KEY_CLONE_RECIPE_ID, keyCloneItem, listOf("YY"), createMap(arrayOf("Y"), arrayOf(config.getKeyMaterialID()))!!, register)
+        createRecipe(BUNCH_OF_KEYS_RECIPE_ID, bunchOfKeysItem, config.bunchOfKeysShape, register)
+        createRecipe(PADLOCK_FINDER_RECIPE_ID, padlockFinderItem, listOf("ZY"), createMap(arrayOf("Z", "Y"), arrayOf(config.getPadlockFinderMaterialID(), config.getKeyMaterialID()))!!, register)
+    }
 
-public abstract class PluginItemManager<T> extends ItemManager<T> {
+    /**
+     * Creates a recipe for an item.
+     *
+     * @param id The recipe ID.
+     * @param result The item.
+     * @param shape The shape.
+     */
+    private fun <R> createRecipe(id: String, result: T, shape: List<String>, register: Function<R, Unit>) {
+        createRecipe(id, result, shape, config.shapeMaterials, register)
+    }
 
-	/**
-	 * The key recipe ID.
-	 */
+    /**
+     * Creates a recipe for an item.
+     *
+     * @param id The recipe ID.
+     * @param result The item.
+     * @param shape The shape.
+     * @param ingredients The ingredients needed for the craft.
+     */
+    protected abstract fun <R> createRecipe(id: String, result: T, shape: List<String>, ingredients: Map<String, String>, register: Function<R, Unit>)
 
-	public static final String KEY_RECIPE_ID = "key";
+    override fun isKey(item: T?): Boolean {
+        return areItemsEqual(keyItem, item)
+    }
 
-	/**
-	 * The master key recipe ID.
-	 */
+    override fun isMasterKey(item: T?): Boolean {
+        return areItemsEqual(masterKeyItem, item)
+    }
 
-	public static final String MASTER_KEY_RECIPE_ID = "master_key";
+    override fun isBunchOfKeys(item: T?): Boolean {
+        return areItemsEqual(bunchOfKeysItem, item)
+    }
 
-	/**
-	 * The key clone recipe ID.
-	 */
+    override fun isPadlockFinder(item: T?): Boolean {
+        return areItemsEqual(padlockFinderItem, item)
+    }
 
-	public static final String KEY_CLONE_RECIPE_ID = "key_clone";
+    /**
+     * Returns whether the specified items are equal.
+     *
+     * @param item1 The first item.
+     * @param item2 The second item.
+     *
+     * @return **true** Yes.
+     * <br></br>**false** Otherwise.
+     */
+    private fun areItemsEqual(item1: T, item2: T?): Boolean {
+        return isItemValid(item2) && compareItemsType(item1, item2!!) && (config.canRenameItems || compareItemsName(item1, item2))
+    }
 
-	/**
-	 * The bunch of keys recipe ID.
-	 */
+    /**
+     * Checks if the specified item is valid.
+     *
+     * @param item The item.
+     *
+     * @return **true :** yes.
+     * <br></br>**false :** no.
+     */
+    protected abstract fun isItemValid(item: T?): Boolean
 
-	public static final String BUNCH_OF_KEYS_RECIPE_ID = "bunch_of_keys";
+    /**
+     * Compare the specified items name.
+     *
+     * @param item1 The first item.
+     * @param item2 The second item.
+     *
+     * @return **true :** they are equal.
+     * <br></br>**false :** they are not equal.
+     */
+    protected abstract fun compareItemsName(item1: T, item2: T): Boolean
 
-	/**
-	 * The padlock finder recipe ID.
-	 */
+    /**
+     * Compare the specified items type.
+     *
+     * @param item1 The first item.
+     * @param item2 The second item.
+     *
+     * @return **true :** they are equal.
+     * <br></br>**false :** they are not equal.
+     */
+    protected abstract fun compareItemsType(item1: T, item2: T): Boolean
 
-	public static final String PADLOCK_FINDER_RECIPE_ID = "padlock_finder";
+    companion object {
+        /**
+         * The key recipe ID.
+         */
+        const val KEY_RECIPE_ID = "key"
 
-	/**
-	 * The SerialKey configuration instance.
-	 */
+        /**
+         * The master key recipe ID.
+         */
+        const val MASTER_KEY_RECIPE_ID = "master_key"
 
-	protected final SerialKeyConfig config;
+        /**
+         * The key clone recipe ID.
+         */
+        const val KEY_CLONE_RECIPE_ID = "key_clone"
 
-	/**
-	 * Creates a new plugin item manager instance.
-	 *
-	 * @param config The SerialKey configuration instance.
-	 * @param key The key item.
-	 * @param masterKey The master key item.
-	 * @param keyClone The key clone item.
-	 * @param bunchOfKeys The bunch of keys item.
-	 * @param padlockFinder The padlock finder item.
-	 */
+        /**
+         * The bunch of keys recipe ID.
+         */
+        const val BUNCH_OF_KEYS_RECIPE_ID = "bunch_of_keys"
 
-	public PluginItemManager(final SerialKeyConfig config, final T key, final T masterKey, final T keyClone, final T bunchOfKeys, final T padlockFinder) {
-		super(key, masterKey, keyClone, bunchOfKeys, padlockFinder);
-
-		this.config = config;
-	}
-
-	/**
-	 * Creates all required recipes.
-	 */
-
-	public void createRecipes() {
-		createRecipe(KEY_RECIPE_ID, getKeyItem(), config.getKeyShape());
-		createRecipe(MASTER_KEY_RECIPE_ID, getMasterKeyItem(), config.getMasterKeyShape());
-		createRecipe(KEY_CLONE_RECIPE_ID, getKeyCloneItem(), Collections.singletonList("YY"), Objects.requireNonNull(Util.createMap(new String[]{"Y"}, new String[]{config.getKeyMaterialID()})));
-		createRecipe(BUNCH_OF_KEYS_RECIPE_ID, getBunchOfKeysItem(), config.getBunchOfKeysShape());
-		createRecipe(PADLOCK_FINDER_RECIPE_ID, getPadlockFinderItem(), Collections.singletonList("ZY"), Objects.requireNonNull(Util.createMap(new String[]{"Z", "Y"}, new String[]{config.getPadlockFinderMaterialID(), config.getKeyMaterialID()})));
-	}
-
-	/**
-	 * Creates a recipe for an item.
-	 *
-	 * @param id The recipe ID.
-	 * @param result The item.
-	 * @param shape The shape.
-	 */
-
-	private void createRecipe(final String id, final T result, final List<String> shape) {
-		createRecipe(id, result, shape, config.getShapeMaterials());
-	}
-
-	/**
-	 * Creates a recipe for an item.
-	 *
-	 * @param id The recipe ID.
-	 * @param result The item.
-	 * @param shape The shape.
-	 * @param ingredients The ingredients needed for the craft.
-	 */
-
-	protected abstract void createRecipe(final String id, final T result, final List<String> shape, final Map<String, String> ingredients);
-
-	@Override
-	public boolean isKey(final T item) {
-		return areItemsEqual(getKeyItem(), item);
-	}
-
-	@Override
-	public boolean isMasterKey(final T item) {
-		return areItemsEqual(getMasterKeyItem(), item);
-	}
-
-	@Override
-	public boolean isBunchOfKeys(final T item) {
-		return areItemsEqual(getBunchOfKeysItem(), item);
-	}
-
-	@Override
-	public boolean isPadlockFinder(final T item) {
-		return areItemsEqual(getPadlockFinderItem(), item);
-	}
-
-	/**
-	 * Returns whether the specified items are equal.
-	 *
-	 * @param item1 The first item.
-	 * @param item2 The second item.
-	 *
-	 * @return <b>true</b> Yes.
-	 * <br><b>false</b> Otherwise.
-	 */
-
-	private boolean areItemsEqual(final T item1, final T item2) {
-		return isItemValid(item2) && compareItemsType(item1, item2) && (config.canRenameItems() || compareItemsName(item1, item2));
-	}
-
-	/**
-	 * Checks if the specified item is valid.
-	 *
-	 * @param item The item.
-	 *
-	 * @return <b>true :</b> yes.
-	 * <br /><b>false :</b> no.
-	 */
-
-	protected abstract boolean isItemValid(final T item);
-
-	/**
-	 * Compare the specified items name.
-	 *
-	 * @param item1 The first item.
-	 * @param item2 The second item.
-	 *
-	 * @return <b>true :</b> they are equal.
-	 * <br /><b>false :</b> they are not equal.
-	 */
-
-	protected abstract boolean compareItemsName(final T item1, final T item2);
-
-	/**
-	 * Compare the specified items type.
-	 *
-	 * @param item1 The first item.
-	 * @param item2 The second item.
-	 *
-	 * @return <b>true :</b> they are equal.
-	 * <br /><b>false :</b> they are not equal.
-	 */
-
-	protected abstract boolean compareItemsType(final T item1, final T item2);
-
+        /**
+         * The padlock finder recipe ID.
+         */
+        const val PADLOCK_FINDER_RECIPE_ID = "padlock_finder"
+    }
 }

@@ -1,141 +1,103 @@
-package fr.skyost.serialkey.core.unlocker;
+package fr.skyost.serialkey.core.unlocker
 
-import fr.skyost.serialkey.core.SerialKeyPlugin;
-import fr.skyost.serialkey.core.object.SerialKeyLocation;
-import fr.skyost.serialkey.core.object.SerialKeyPerson;
-import fr.skyost.serialkey.core.util.ROT47;
-
-import java.util.List;
-import java.util.function.Function;
+import fr.skyost.serialkey.core.SerialKeyPlugin
+import fr.skyost.serialkey.core.`object`.SerialKeyLocation
+import fr.skyost.serialkey.core.`object`.SerialKeyPerson
+import fr.skyost.serialkey.core.util.ROT47.rotate
+import java.util.function.Function
 
 /**
  * An unlocker that depends on a plugin.
  *
  * @param <T> ItemStack class.
  */
+abstract class PluginUnlocker<T>(private val plugin: SerialKeyPlugin<T, *>) : LoreUnlocker<T>(plugin.itemManager) {
+    override fun getLocations(item: T): List<SerialKeyLocation> {
+        val stringProcessor: Function<String, String> = if (isCipheringEnabled) Function { string: String -> rotate(stripColor(string)) } else Function { string: String -> stripColor(string) }
+        return getLocations(item, stringProcessor)
+    }
 
-public abstract class PluginUnlocker<T> extends LoreUnlocker<T> {
+    override fun addLocation(item: T, location: SerialKeyLocation) {
+        plugin.padlockManager.fixLocation(location)
+        super.addLocation(item, location)
+    }
 
-	/**
-	 * The plugin instance.
-	 */
+    public override fun addLocation(item: T, world: String, position: String) {
+        val color = randomColor()
+        addLocation(item, world, position, if (isCipheringEnabled) Function { string: String -> color + rotate(string) } else Function { string: String -> color + string })
+    }
 
-	private final SerialKeyPlugin<T, ?> plugin;
+    override fun removeLocation(item: T, location: SerialKeyLocation): Short {
+        plugin.padlockManager.fixLocation(location)
+        return super.removeLocation(item, location)
+    }
 
-	/**
-	 * Creates a new plugin unlocker instance.
-	 *
-	 * @param plugin The plugin.
-	 */
+    public override fun removeLocation(item: T, world: String, position: String): Short {
+        val stringProcessor: Function<String, String> = if (isCipheringEnabled) Function { string: String -> rotate(stripColor(string)) } else Function { string: String -> stripColor(string) }
+        return removeLocation(item, world, position, stringProcessor)
+    }
 
-	public PluginUnlocker(final SerialKeyPlugin<T, ?> plugin) {
-		super(plugin.getItemManager());
+    override fun canUnlock(item: T?, location: SerialKeyLocation): Boolean {
+        plugin.padlockManager.fixLocation(location)
+        return super.canUnlock(item, location)
+    }
 
-		this.plugin = plugin;
-	}
+    override fun canUnlock(item: T?, world: String, position: String): Boolean {
+        val stringProcessor: Function<String, String> = if (isCipheringEnabled) Function { string: String -> rotate(stripColor(string)) } else Function { string: String -> stripColor(string) }
+        return super.canUnlock(item, world, position, stringProcessor)
+    }
 
-	@Override
-	public List<SerialKeyLocation> getLocations(final T item) {
-		final Function<String, String> stringProcessor = isCipheringEnabled() ? string -> ROT47.rotate(stripColor(string)) : this::stripColor;
-		return getLocations(item, stringProcessor);
-	}
+    override val isCipheringEnabled: Boolean
+        get() = plugin.pluginConfig.encryptLore
 
-	@Override
-	public void addLocation(final T item, final SerialKeyLocation location) {
-		plugin.getPadlockManager().fixLocation(location);
-		super.addLocation(item, location);
-	}
+    /**
+     * Checks if the specified item is a valid key for the specified object.
+     *
+     * @param item The object.
+     * @param location The location.
+     * @param player If you want to check if the player has the right permission. Will send a message if he doesn't.
+     *
+     * @return **true** : yes.
+     * <br></br>**false** : no.
+     */
+    fun canUnlock(item: T?, location: SerialKeyLocation, player: SerialKeyPerson?): Boolean {
+        if (itemManager.isMasterKey(item)) {
+            if (player != null && !player.hasPermission("serialkey.use.masterkey")) {
+                plugin.sendMessage(player, plugin.pluginMessages.permissionMessage)
+            }
+            return true
+        }
+        plugin.padlockManager.fixLocation(location)
+        if (itemManager.isUsedKey(item)) {
+            if (player != null && !player.hasPermission("serialkey.use.key")) {
+                plugin.sendMessage(player, plugin.pluginMessages.permissionMessage)
+                return false
+            }
+            return canUnlock(item, location.world!!, location.position)
+        }
+        if (itemManager.isUsedBunchOfKeys(item)) {
+            if (player != null && !player.hasPermission("serialkey.use.bunchofkeys")) {
+                plugin.sendMessage(player, plugin.pluginMessages.permissionMessage)
+                return false
+            }
+            return canUnlock(item, location.world!!, location.position)
+        }
+        return false
+    }
 
-	@Override
-	public void addLocation(final T item, final String world, final String position) {
-		final String color = randomColor();
-		addLocation(item, world, position, isCipheringEnabled() ? string -> color + ROT47.rotate(string) : string -> color + string);
-	}
+    /**
+     * Returns a random chat color.
+     *
+     * @return A random chat color.
+     */
+    protected abstract fun randomColor(): String
 
-	@Override
-	public short removeLocation(final T item, final SerialKeyLocation location) {
-		plugin.getPadlockManager().fixLocation(location);
-		return super.removeLocation(item, location);
-	}
-
-	@Override
-	public short removeLocation(final T item, final String world, final String position) {
-		final Function<String, String> stringProcessor = isCipheringEnabled() ? string -> ROT47.rotate(stripColor(string)) : this::stripColor;
-		return removeLocation(item, world, position, stringProcessor);
-	}
-
-	@Override
-	public boolean canUnlock(final T item, final SerialKeyLocation location) {
-		plugin.getPadlockManager().fixLocation(location);
-		return super.canUnlock(item, location);
-	}
-
-	@Override
-	public boolean canUnlock(final T item, final String world, final String position) {
-		final Function<String, String> stringProcessor = isCipheringEnabled() ? string -> ROT47.rotate(stripColor(string)) : this::stripColor;
-		return super.canUnlock(item, world, position, stringProcessor);
-	}
-
-	@Override
-	public boolean isCipheringEnabled() {
-		return plugin.getPluginConfig().areLoresEncrypted();
-	}
-
-	/**
-	 * Checks if the specified item is a valid key for the specified object.
-	 *
-	 * @param item The object.
-	 * @param location The location.
-	 * @param player If you want to check if the player has the right permission. Will send a message if he doesn't.
-	 *
-	 * @return <b>true</b> : yes.
-	 * <br><b>false</b> : no.
-	 */
-
-	public boolean canUnlock(final T item, final SerialKeyLocation location, final SerialKeyPerson player) {
-		if(itemManager.isMasterKey(item)) {
-			if(player != null && !player.hasPermission("serialkey.use.masterkey")) {
-				plugin.sendMessage(player, plugin.getPluginMessages().getPermissionMessage());
-			}
-			return true;
-		}
-
-		plugin.getPadlockManager().fixLocation(location);
-		if(itemManager.isUsedKey(item)) {
-			if(player != null && !player.hasPermission("serialkey.use.key")) {
-				plugin.sendMessage(player, plugin.getPluginMessages().getPermissionMessage());
-				return false;
-			}
-			return canUnlock(item, location.getWorld(), location.getPosition());
-		}
-
-		if(itemManager.isUsedBunchOfKeys(item)) {
-			if(player != null && !player.hasPermission("serialkey.use.bunchofkeys")) {
-				plugin.sendMessage(player, plugin.getPluginMessages().getPermissionMessage());
-				return false;
-			}
-			return canUnlock(item, location.getWorld(), location.getPosition());
-		}
-
-		return false;
-	}
-
-	/**
-	 * Returns a random chat color.
-	 *
-	 * @return A random chat color.
-	 */
-
-	protected abstract String randomColor();
-
-	/**
-	 * Strips all colors from the specified string.
-	 *
-	 * @param string The string.
-	 *
-	 * @return The handled string.
-	 */
-
-	protected abstract String stripColor(final String string);
-
+    /**
+     * Strips all colors from the specified string.
+     *
+     * @param string The string.
+     *
+     * @return The handled string.
+     */
+    protected abstract fun stripColor(string: String): String
 }

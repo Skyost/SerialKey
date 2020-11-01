@@ -1,70 +1,59 @@
-package fr.skyost.serialkey.core.padlock;
+package fr.skyost.serialkey.core.padlock
 
-import fr.skyost.serialkey.core.object.SerialKeyLocation;
-
-import java.util.HashSet;
-import java.util.Set;
+import fr.skyost.serialkey.core.`object`.SerialKeyLocation
+import java.util.*
 
 /**
  * The class that allows to manage padlocks.
  */
+open class PadlockManager {
+    /**
+     * The padlocks.
+     */
+    private val padlocks: HashSet<SerialKeyLocation> = HashSet<SerialKeyLocation>()
 
-public class PadlockManager {
+    /**
+     * Registers a padlock at the specified location.
+     *
+     * @param location The location.
+     */
+    fun registerPadlock(location: SerialKeyLocation) {
+        padlocks.add(location.copy())
+    }
 
-	/**
-	 * The padlocks.
-	 */
+    /**
+     * Unregisters a padlock located at the specified location.
+     *
+     * @param location The location.
+     */
+    open fun unregisterPadlock(location: SerialKeyLocation) {
+        padlocks.remove(location)
+    }
 
-	private final HashSet<SerialKeyLocation> padlocks = new HashSet<>();
+    /**
+     * Returns whether or no there is a padlock at the specified location.
+     *
+     * @param location The location.
+     *
+     * @return Whether or no there is a padlock at the specified location.
+     */
+    open fun hasPadlock(location: SerialKeyLocation): Boolean {
+        return padlocks.contains(location)
+    }
 
-	/**
-	 * Registers a padlock at the specified location.
-	 *
-	 * @param location The location.
-	 */
+    /**
+     * Clears all padlocks.
+     */
+    fun clearPadlocks() {
+        padlocks.clear()
+    }
 
-	public void registerPadlock(final SerialKeyLocation location) {
-		padlocks.add(location.copy());
-	}
-
-	/**
-	 * Unregisters a padlock located at the specified location.
-	 *
-	 * @param location The location.
-	 */
-
-	public void unregisterPadlock(final SerialKeyLocation location) {
-		padlocks.remove(location);
-	}
-
-	/**
-	 * Returns whether or no there is a padlock at the specified location.
-	 *
-	 * @param location The location.
-	 *
-	 * @return Whether or no there is a padlock at the specified location.
-	 */
-
-	public boolean hasPadlock(final SerialKeyLocation location) {
-		return padlocks.contains(location);
-	}
-
-	/**
-	 * Clears all padlocks.
-	 */
-
-	public void clearPadlocks() {
-		padlocks.clear();
-	}
-
-	/**
-	 * Returns all padlocks.
-	 *
-	 * @return All padlocks.
-	 */
-
-	public Set<SerialKeyLocation> getPadlocks() {
-		return padlocks;
-	}
-
+    /**
+     * Returns all padlocks.
+     *
+     * @return All padlocks.
+     */
+    fun getPadlocks(): Set<SerialKeyLocation> {
+        return padlocks
+    }
 }

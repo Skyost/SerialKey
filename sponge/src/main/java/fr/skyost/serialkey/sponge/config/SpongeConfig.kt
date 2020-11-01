@@ -1,285 +1,205 @@
-package fr.skyost.serialkey.sponge.config;
+package fr.skyost.serialkey.sponge.config
 
-import com.google.common.base.Joiner;
-import com.google.common.primitives.Primitives;
-import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
-import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
-import org.spongepowered.api.Sponge;
-import org.spongepowered.api.item.ItemType;
-
-import java.io.File;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
+import com.google.common.base.Joiner
+import com.google.common.primitives.Primitives
+import ninja.leaping.configurate.ConfigurationNode
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader
+import org.spongepowered.api.Sponge
+import org.spongepowered.api.item.ItemType
+import java.io.File
+import java.lang.reflect.Field
+import java.lang.reflect.InvocationTargetException
+import java.nio.file.Path
+import java.util.function.Function
+import java.util.regex.Pattern
 
 /**
  * A useful class that allows to serialize (and deserialize) its inheriting classes to a Sponge configuration.
  */
+open class SpongeConfig internal constructor(file: Path, private val comments: Collection<String>) {
+    /**
+     * The file.
+     */
+    private val file: File = file.toFile()
 
-public class SpongeConfig {
+    /**
+     * The configuration loader.
+     */
+    private val loader: HoconConfigurationLoader = HoconConfigurationLoader.builder().setPath(file).build()
 
-	/**
-	 * The node separator.
-	 */
+    /**
+     * Loads the fields from the config file.
+     *
+     * @throws InvalidConfigurationException If any error occurs.
+     */
+    @Throws(InvalidConfigurationException::class)
+    fun load() {
+        try {
+            if (file.exists()) {
+                val node = loader.load()
+                node.setComment(Joiner.on(System.lineSeparator()).join(comments))
+                val fields = javaClass.declaredFields
+                for (field in fields) {
+                    field.isAccessible = true
+                    field[this] = deserializeField(field, field[this], node)
+                }
+            }
+            save()
+        } catch (ex: Exception) {
+            throw InvalidConfigurationException(ex)
+        }
+    }
 
-	private static final String SEPARATOR = ".";
+    /**
+     * Saves the fields to the config file.
+     *
+     * @throws InvalidConfigurationException If any error occurs.
+     */
+    @Throws(InvalidConfigurationException::class)
+    fun save() {
+        try {
+            if (!file.exists()) {
+                file.parentFile.mkdirs()
+                file.createNewFile()
+            }
+            val node: ConfigurationNode = loader.load()
+            val fields = javaClass.declaredFields
+            for (field in fields) {
+                field.isAccessible = true
+                getFieldNode(field, node).value = serializeField(field[this])
+            }
+            loader.save(node)
+        } catch (ex: Exception) {
+            throw InvalidConfigurationException(ex)
+        }
+    }
 
-	/**
-	 * The file.
-	 */
+    /**
+     * Deserializes a field.
+     *
+     * @param field The field.
+     * @param defaultValue The default value.
+     * @param node The target node.
+     *
+     * @return The value.
+     *
+     * @throws IllegalAccessException If field access is not permitted.
+     * @throws InstantiationException If an object cannot be instantiated.
+     * @throws NoSuchMethodException If a specified method doesn't exist.
+     * @throws InvocationTargetException If a method cannot be invoked for the specified arguments.
+     */
+    @Throws(IllegalAccessException::class, InstantiationException::class, NoSuchMethodException::class, InvocationTargetException::class)
+    private fun deserializeField(field: Field, defaultValue: Any, node: ConfigurationNode): Any? {
+        val fieldNode = getFieldNode(field, node)
+        if (defaultValue is Map<*, *>) {
+            val result = defaultValue.javaClass.newInstance() as MutableMap<Any?, Any?>
+            val childrenMap: Map<*, ConfigurationNode> = fieldNode.childrenMap
+            for ((key, value) in childrenMap) {
+                result[key] = value.value
+            }
+            return result
+        }
+        if (defaultValue is List<*>) {
+            val result = defaultValue.javaClass.newInstance() as MutableList<Any?>
+            result.addAll(fieldNode.getList(Function { `object`: Any? -> `object` }, defaultValue))
+            return result
+        }
+        val clazz: Class<*> = defaultValue.javaClass
+        if (clazz.isPrimitive) {
+            return Primitives.wrap(clazz).getMethod("valueOf", String::class.java).invoke(this, fieldNode.getValue(defaultValue).toString())
+        }
+        if (Primitives.isWrapperType(clazz)) {
+            return clazz.getMethod("valueOf", String::class.java).invoke(this, fieldNode.getValue(defaultValue).toString())
+        }
+        if (defaultValue is ItemType) {
+            return Sponge.getRegistry().getType(ItemType::class.java, fieldNode.getString(defaultValue.id)).orElse(null)
+        }
+        if (clazz.isEnum) {
+            return java.lang.Enum.valueOf(clazz as Class<out Enum<*>?>, fieldNode.getValue(defaultValue).toString())
+        }
+        return if (defaultValue is String) {
+            fieldNode.getString(defaultValue)
+        } else defaultValue
+    }
 
-	private final File file;
+    /**
+     * Serializes a field.
+     *
+     * @param value The field value.
+     *
+     * @return The serialized value.
+     */
+    private fun serializeField(value: Any): Any {
+        if (value is Map<*, *> || value is List<*> || value is String) {
+            return value
+        }
+        if (value is ItemType) {
+            return value.id
+        }
+        val clazz: Class<*> = value.javaClass
+        if (clazz.isPrimitive || Primitives.isWrapperType(clazz)) {
+            return value
+        }
+        return if (clazz.isEnum) {
+            (value as Enum<*>).name
+        } else value
+    }
 
-	/**
-	 * The comments.
-	 */
+    /**
+     * Returns the config node that corresponds to the specified field.
+     *
+     * @param field The field.
+     * @param parent The node parent.
+     *
+     * @return The config node that corresponds to the specified field.
+     */
+    private fun getFieldNode(field: Field, parent: ConfigurationNode): ConfigurationNode {
+        var fieldNode = parent
+        val parts = getFieldName(field).split(Pattern.quote(SEPARATOR)).toTypedArray()
+        for (part in parts) {
+            fieldNode = fieldNode.getNode(part)
+        }
+        return fieldNode
+    }
 
-	private final String[] comments;
+    /**
+     * Returns the string identifier that corresponds to the specified field.
+     *
+     * @param field The field.
+     *
+     * @return The string identifier that corresponds to the specified field.
+     */
+    private fun getFieldName(field: Field): String {
+        val options = field.getAnnotation(ConfigOptions::class.java)
+        return if (options == null || options.name.isEmpty()) {
+            field.name
+        } else options.name
+    }
 
-	/**
-	 * The configuration loader.
-	 */
+    /**
+     * Represents some config options that can be applied to a field.
+     */
+    @kotlin.annotation.Retention(AnnotationRetention.RUNTIME)
+    @Target(AnnotationTarget.FIELD)
+    protected annotation class ConfigOptions(
+            /**
+             * The key's name.
+             *
+             * @return The key's name.
+             */
+            val name: String = ""
+    )
 
-	private final HoconConfigurationLoader loader;
+    /**
+     * Represents an invalid configuration exception.
+     */
+    inner class InvalidConfigurationException(throwable: Throwable) : Exception(throwable)
 
-	/**
-	 * Creates a new Sponge config instance.
-	 *
-	 * @param file The file.
-	 * @param comments The comments.
-	 */
-
-	SpongeConfig(final Path file, final String... comments) {
-		this.file = file.toFile();
-		this.comments = comments;
-		loader = HoconConfigurationLoader.builder().setPath(file).build();
-	}
-
-	/**
-	 * Loads the fields from the config file.
-	 *
-	 * @throws InvalidConfigurationException If any error occurs.
-	 */
-
-	public void load() throws InvalidConfigurationException {
-		try {
-			if(file.exists()) {
-				final CommentedConfigurationNode node = loader.load();
-				node.setComment(Joiner.on(System.lineSeparator()).join(comments));
-
-				final Field[] fields = getClass().getDeclaredFields();
-				for(final Field field : fields) {
-					field.setAccessible(true);
-					field.set(this, deserializeField(field, field.get(this), node));
-				}
-			}
-			save();
-		}
-		catch(final Exception ex) {
-			throw new InvalidConfigurationException(ex);
-		}
-	}
-
-	/**
-	 * Saves the fields to the config file.
-	 *
-	 * @throws InvalidConfigurationException If any error occurs.
-	 */
-
-	public void save() throws InvalidConfigurationException {
-		try {
-			if(!file.exists()) {
-				file.getParentFile().mkdirs();
-				file.createNewFile();
-			}
-
-			final ConfigurationNode node = loader.load();
-			final Field[] fields = getClass().getDeclaredFields();
-			for(final Field field : fields) {
-				field.setAccessible(true);
-				getFieldNode(field, node).setValue(serializeField(field.get(this)));
-			}
-			loader.save(node);
-		}
-		catch(final Exception ex) {
-			throw new InvalidConfigurationException(ex);
-		}
-	}
-
-	/**
-	 * Deserializes a field.
-	 *
-	 * @param field The field.
-	 * @param defaultValue The default value.
-	 * @param node The target node.
-	 *
-	 * @return The value.
-	 *
-	 * @throws IllegalAccessException If field access is not permitted.
-	 * @throws InstantiationException If an object cannot be instantiated.
-	 * @throws NoSuchMethodException If a specified method doesn't exist.
-	 * @throws InvocationTargetException If a method cannot be invoked for the specified arguments.
-	 */
-
-	private Object deserializeField(final Field field, final Object defaultValue, final ConfigurationNode node) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
-		final ConfigurationNode fieldNode = getFieldNode(field, node);
-
-		if(defaultValue instanceof Map) {
-			final Map result = (Map)defaultValue.getClass().newInstance();
-			final Map<?, ? extends ConfigurationNode> childrenMap = fieldNode.getChildrenMap();
-			for(final Map.Entry<?, ? extends ConfigurationNode> child : childrenMap.entrySet()) {
-				result.put(child.getKey(), child.getValue().getValue());
-			}
-
-			return result;
-		}
-
-		if(defaultValue instanceof List) {
-			final List result = (List)defaultValue.getClass().newInstance();
-			result.addAll(fieldNode.getList(object -> object, (List)defaultValue));
-			return result;
-		}
-
-		final Class<?> clazz = defaultValue.getClass();
-		if(clazz.isPrimitive()) {
-			return Primitives.wrap(clazz).getMethod("valueOf", String.class).invoke(this, fieldNode.getValue(defaultValue).toString());
-		}
-
-		if(Primitives.isWrapperType(clazz)) {
-			return clazz.getMethod("valueOf", String.class).invoke(this, fieldNode.getValue(defaultValue).toString());
-		}
-
-		if(defaultValue instanceof ItemType) {
-			return Sponge.getRegistry().getType(ItemType.class, fieldNode.getString(((ItemType)defaultValue).getId())).orElse(null);
-		}
-
-		if(clazz.isEnum()) {
-			return Enum.valueOf((Class<? extends Enum>)clazz, fieldNode.getValue(defaultValue).toString());
-		}
-
-		if(defaultValue instanceof String) {
-			return fieldNode.getString((String)defaultValue);
-		}
-
-		return defaultValue;
-	}
-
-	/**
-	 * Serializes a field.
-	 *
-	 * @param value The field value.
-	 *
-	 * @return The serialized value.
-	 */
-
-	private Object serializeField(final Object value) {
-		if(value instanceof Map || value instanceof List || value instanceof String) {
-			return value;
-		}
-
-		if(value instanceof ItemType) {
-			return ((ItemType)value).getId();
-		}
-
-		final Class<?> clazz = value.getClass();
-		if(clazz.isPrimitive() || Primitives.isWrapperType(clazz)) {
-			return value;
-		}
-
-		if(clazz.isEnum()) {
-			return ((Enum<?>)value).name();
-		}
-
-		return value;
-	}
-
-	/**
-	 * Returns the config node that corresponds to the specified field.
-	 *
-	 * @param field The field.
-	 * @param parent The node parent.
-	 *
-	 * @return The config node that corresponds to the specified field.
-	 */
-
-	private ConfigurationNode getFieldNode(final Field field, final ConfigurationNode parent) {
-		ConfigurationNode fieldNode = parent;
-		final String[] parts = getFieldName(field).split(Pattern.quote(SEPARATOR));
-		for(final String part : parts) {
-			fieldNode = fieldNode.getNode(part);
-		}
-
-		return fieldNode;
-	}
-
-	/**
-	 * Returns the string identifier that corresponds to the specified field.
-	 *
-	 * @param field The field.
-	 *
-	 * @return The string identifier that corresponds to the specified field.
-	 */
-
-	private String getFieldName(final Field field) {
-		final ConfigOptions options = field.getAnnotation(ConfigOptions.class);
-		if(options == null || options.name().isEmpty()) {
-			return field.getName();
-		}
-		return options.name();
-	}
-
-	/**
-	 * Represents some config options that can be applied to a field.
-	 */
-
-	@Retention(RetentionPolicy.RUNTIME)
-	@Target(ElementType.FIELD)
-	protected @interface ConfigOptions {
-
-		/**
-		 * The key's name.
-		 *
-		 * @return The key's name.
-		 */
-
-		String name() default "";
-
-	}
-
-	/**
-	 * Represents an invalid configuration exception.
-	 */
-
-	public class InvalidConfigurationException extends Exception {
-
-		/**
-		 * Creates a new invalid configuration exception instance.
-		 *
-		 * @param message The message.
-		 */
-
-		private InvalidConfigurationException(final String message) {
-			super(message);
-		}
-
-		/**
-		 * Creates a new invalid configuration exception instance.
-		 *
-		 * @param throwable The throwable child.
-		 */
-
-		private InvalidConfigurationException(final Throwable throwable) {
-			super(throwable);
-		}
-
-	}
+    companion object {
+        /**
+         * The node separator.
+         */
+        private const val SEPARATOR = "."
+    }
 
 }
